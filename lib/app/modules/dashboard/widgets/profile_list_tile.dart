@@ -1,0 +1,112 @@
+import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/extensions.dart';
+import '../../../data/model/profile_model.dart';
+import 'profile_icon_badge.dart';
+import 'tag_count_badge.dart';
+
+class ProfileListTile extends StatefulWidget {
+  final int index;
+  final ProfileModel profile;
+  final VoidCallback onTap;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const ProfileListTile({
+    super.key,
+    required this.index,
+    required this.profile,
+    required this.onTap,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  State<ProfileListTile> createState() => _ProfileListTileState();
+}
+
+class _ProfileListTileState extends State<ProfileListTile> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: InkWell(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          decoration: BoxDecoration(
+            color: _isHovered ? AppColors.scaffoldBg : AppColors.white,
+            border: const Border(
+              bottom: BorderSide(color: AppColors.tableBorder),
+            ),
+          ),
+          child: Row(
+            children: [
+              // Index
+              SizedBox(
+                width: 50,
+                child: Text(
+                  (widget.index + 1).toZeroPadded(),
+                  style: AppTextStyles.tableRowNum,
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Icon + Name
+              Expanded(
+                flex: 4,
+                child: Row(
+                  children: [
+                    ProfileIconBadge(iconType: widget.profile.iconType),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        widget.profile.name,
+                        style: AppTextStyles.tableRow,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 24),
+              // Tag count
+              SizedBox(
+                width: 120,
+                child: TagCountBadge(count: widget.profile.tagCount),
+              ),
+              const SizedBox(width: 12),
+              // Actions
+              SizedBox(
+                width: 80,
+                child: _isHovered
+                    ? Row(
+                        children: [
+                          InkWell(
+                            onTap: widget.onEdit,
+                            child: const Icon(Icons.edit_outlined, size: 20, color: AppColors.primary),
+                          ),
+                          const SizedBox(width: 12),
+                          InkWell(
+                            onTap: widget.onDelete,
+                            child: const Icon(Icons.delete_outline, size: 20, color: AppColors.error),
+                          ),
+                        ],
+                      )
+                    : const Row(
+                        children: [
+                          Icon(Icons.more_horiz, color: AppColors.textTertiary),
+                        ],
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
