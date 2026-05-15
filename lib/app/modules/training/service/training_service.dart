@@ -32,32 +32,7 @@ class TrainingService {
     return _dio.get(ApiConstants.hparams(useCase));
   }
 
-  Future<Response> trainModel({
-    required String datasetId,
-    required String featureSchemaId,
-    required String modelName,
-    required String useCase,
-    required List<String> tags,
-    required List<String> mandatoryFeatures,
-    required List<String> optionalFeatures,
-    required double trainSplit,
-    required int cvFolds,
-    required Map<String, dynamic> hparams,
-  }) {
-    return _dio.post(
-      ApiConstants.train,
-      data: {
-        'dataset_id': datasetId,
-        'feature_schema_id': featureSchemaId,
-        'model_name': modelName,
-        'use_case': useCase,
-        'tags': tags,
-        'mandatory_features': mandatoryFeatures,
-        'optional_features': optionalFeatures,
-        'train_split': trainSplit,
-        'cv_folds': cvFolds,
-        'hparams': hparams,
-      },
-    );
+  Future<Response> trainModel(Map<String, dynamic> payload) {
+    return _dio.post(ApiConstants.train, data: payload);
   }
 }

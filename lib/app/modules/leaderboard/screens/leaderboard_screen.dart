@@ -12,7 +12,8 @@ import '../../../core/utils/extensions.dart';
 import '../bloc/leaderboard_bloc.dart';
 import '../bloc/leaderboard_event.dart';
 import '../bloc/leaderboard_state.dart';
-import '../../../data/model/leaderboard_entry_model.dart';
+// import '../../../data/model/leaderboard_entry_model.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../widgets/leaderboard_table.dart';
 
 class LeaderboardScreen extends StatefulWidget {
@@ -203,7 +204,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   }
 
   Widget _buildTable(BuildContext context) {
-    return BlocBuilder<LeaderboardBloc, LeaderboardState>(
+    return BlocConsumer<LeaderboardBloc, LeaderboardState>(
+      buildWhen: (previous, current) => 
+          current is LeaderboardLoading || 
+          current is LeaderboardError || 
+          current is LeaderboardLoaded,
+      listener: (context, state) {
+        if (state is ModelDeleteError) {
+          AppSnackbar.showError(context, state.message);
+        }
+        if (state is ModelDeleteSuccess) {
+          AppSnackbar.showSuccess(context, 'Model deleted successfully');
+        }
+      },
       builder: (context, state) {
         if (state is LeaderboardLoading) {
           return const AppLoader();
@@ -221,8 +234,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             entries: state.entries,
             expandedIds: state.expandedIds,
             onToggleExpansion: (id) => context.read<LeaderboardBloc>().add(ToggleModelExpansion(id)),
-            onEdit: (entry) => _showEditDialog(context, entry),
-            onDelete: (entry) => _showDeleteDialog(context, entry),
           );
         }
 
@@ -287,84 +298,5 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       ),
     );
   }
-
-  void _showEditDialog(BuildContext context, LeaderboardEntryModel entry) {
-    final TextEditingController controller = TextEditingController(text: entry.name);
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: AppColors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: Text('Rename Model', style: AppTextStyles.sectionTitle),
-          content: TextField(
-            controller: controller,
-            style: GoogleFonts.inter(fontSize: 14),
-            decoration: InputDecoration(
-              hintText: 'Enter new model name',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.textSecondary)),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final newName = controller.text.trim();
-                if (newName.isNotEmpty) {
-                  context.read<LeaderboardBloc>().add(RenameModel(
-                        profileId: widget.profileId,
-                        modelId: entry.id,
-                        newName: newName,
-                      ));
-                }
-                Navigator.of(dialogContext).pop();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.white,
-              ),
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showDeleteDialog(BuildContext context, LeaderboardEntryModel entry) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: AppColors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: Text('Delete Model', style: AppTextStyles.sectionTitle),
-          content: Text(
-            'Are you sure you want to delete ${entry.name}? This action cannot be undone.',
-            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.textSecondary)),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                context.read<LeaderboardBloc>().add(DeleteModel(entry.id));
-                Navigator.of(dialogContext).pop();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error,
-                foregroundColor: AppColors.white,
-              ),
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }
+

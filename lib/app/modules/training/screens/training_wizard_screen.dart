@@ -5,11 +5,9 @@ import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../core/utils/validators.dart';
 import '../../../core/utils/extensions.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/step_progress_indicator.dart';
-import '../../../data/model/training_config_model.dart';
 import '../bloc/training_wizard_bloc.dart';
 import '../bloc/training_wizard_event.dart';
 import '../bloc/training_wizard_state.dart';
@@ -31,32 +29,20 @@ class TrainingWizardScreen extends StatefulWidget {
 class _TrainingWizardScreenState extends State<TrainingWizardScreen> {
   late final TrainingWizardBloc _bloc;
 
-  // Step 1 state
+  // Step 1 state (local, before bloc handles it)
   String? _selectedFilePath;
   String? _selectedFileName;
 
-  // Step 2 state
-  List<String> _selectedFeatures = [];
-
-  // Step 3 state
-  String? _selectedUseCase;
-
-  // Step 4 state
-  final _modelNameController = TextEditingController(text: 'XGBoost_v1.2_prod');
+  // Step 4 controllers
+  final _modelNameController = TextEditingController(text: '');
+  final _cvFoldsController = TextEditingController(text: '5');
   final _trainSplitController = TextEditingController(text: '0.8');
-  int _cvFold = 5;
-  String? _modelNameError;
-  String? _trainSplitError;
 
-  final List<Map<String, dynamic>> _defaultHyperparameters = [
-    {'name': 'learning_rate', 'value': 0.01},
-    {'name': 'max_depth', 'value': 6},
-    {'name': 'n_estimators', 'value': 100},
-    {'name': 'subsample', 'value': 0.8},
-    {'name': 'colsample_bytree', 'value': 0.8},
-  ];
+  // Validation flag — only show errors after first submit attempt
+  bool _showValidationErrors = false;
 
-  Set<String> _selectedHyperparameters = {'learning_rate', 'max_depth', 'subsample'};
+  // Validation error for step 3 (no use case selected)
+
 
   @override
   void initState() {
@@ -68,6 +54,7 @@ class _TrainingWizardScreenState extends State<TrainingWizardScreen> {
   @override
   void dispose() {
     _modelNameController.dispose();
+    _cvFoldsController.dispose();
     _trainSplitController.dispose();
     super.dispose();
   }
@@ -75,7 +62,7 @@ class _TrainingWizardScreenState extends State<TrainingWizardScreen> {
   int _getCurrentStep(TrainingWizardState state) {
     if (state is WizardStep1) return 1;
     if (state is WizardStep2) return 2;
-    if (state is WizardStep3) return 3;
+    if (state is WizardStep3 || state is WizardStep3Loading) return 3;
     if (state is WizardStep4) return 4;
     return 1;
   }
@@ -97,21 +84,22 @@ class _TrainingWizardScreenState extends State<TrainingWizardScreen> {
           if (state is WizardStep4 && state.error != null) {
             AppSnackbar.showError(context, state.error!);
           }
-          if (state is WizardStep2) {
-            _selectedFeatures = List<String>.from(state.selectedFeatures);
+          if (state is WizardStep3 && state.error != null) {
+            AppSnackbar.showError(context, state.error!);
           }
         },
         builder: (context, state) {
           final currentStep = _getCurrentStep(state);
           final isStep4 = state is WizardStep4;
-          final isSubmitting = (state is WizardStep1 && state.isUploading) ||
-              (state is WizardStep2 && state.isSubmitting) ||
+
+          final isSubmitting =
+              (state is WizardStep1 && state.isUploading) ||
+              (state is WizardStep2 && state.isLoading) ||
+              (state is WizardStep3Loading) ||
               (state is WizardStep4 && state.isSubmitting);
 
           double maxWidth = isStep4 ? 900 : AppDimensions.wizardModalWidth;
-          if (isMobile) {
-            maxWidth = screenSize.width * 0.95;
-          }
+          if (isMobile) maxWidth = screenSize.width * 0.95;
 
           return Dialog(
             insetPadding: EdgeInsets.symmetric(
@@ -125,7 +113,9 @@ class _TrainingWizardScreenState extends State<TrainingWizardScreen> {
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 maxWidth: maxWidth,
-                maxHeight: isMobile ? screenSize.height * 0.9 : AppDimensions.wizardModalMaxH + (isStep4 ? 100 : 0),
+                maxHeight: isMobile
+                    ? screenSize.height * 0.9
+                    : AppDimensions.wizardModalMaxH + (isStep4 ? 100 : 0),
               ),
               child: Padding(
                 padding: EdgeInsets.all(isMobile ? 16 : 28),
@@ -139,9 +129,7 @@ class _TrainingWizardScreenState extends State<TrainingWizardScreen> {
                         Expanded(
                           child: Text(
                             isStep4 ? AppStrings.newModelTraining : AppStrings.modelTrainingConfig,
-                            style: AppTextStyles.sectionTitle.copyWith(
-                              fontSize: isMobile ? 18 : 22,
-                            ),
+                            style: AppTextStyles.sectionTitle.copyWith(fontSize: isMobile ? 18 : 22),
                           ),
                         ),
                         IconButton(
@@ -154,7 +142,6 @@ class _TrainingWizardScreenState extends State<TrainingWizardScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Step indicator
                     StepProgressIndicator(
                       currentStep: currentStep,
                       totalSteps: 4,
@@ -177,7 +164,6 @@ class _TrainingWizardScreenState extends State<TrainingWizardScreen> {
 
                     const SizedBox(height: 12),
 
-                    // Navigation
                     WizardNavigationBar(
                       currentStep: currentStep,
                       isSubmitting: isSubmitting,
@@ -202,6 +188,7 @@ class _TrainingWizardScreenState extends State<TrainingWizardScreen> {
     if (state is WizardStep1) {
       return Step1DataSource(
         fileName: _selectedFileName ?? state.fileName,
+        filePath: _selectedFilePath ?? state.filePath,
         isUploading: state.isUploading,
         error: state.error,
         onFilePicked: (path) {
@@ -220,53 +207,21 @@ class _TrainingWizardScreenState extends State<TrainingWizardScreen> {
     }
 
     if (state is WizardStep2) {
-      return Step2Features(
-        features: state.session.columns,
-        selectedFeatures: _selectedFeatures,
-        onSelectionChanged: (features) {
-          setState(() => _selectedFeatures = features);
-        },
-        error: state.error,
-      );
+      // The Step2Features widget dispatches FetchFeatures(datasetId) on mount
+      return Step2Features(datasetId: state.datasetId);
     }
 
-    if (state is WizardStep3) {
-      return Step3UseCase(
-        selectedUseCase: _selectedUseCase,
-        onSelected: (useCase) {
-          setState(() => _selectedUseCase = useCase);
-        },
-        error: state.error,
-      );
+    if (state is WizardStep3 || state is WizardStep3Loading) {
+      return const Step3UseCase();
     }
 
     if (state is WizardStep4) {
       return Step4Configuration(
         modelNameController: _modelNameController,
-        cvFold: _cvFold,
+        cvFoldsController: _cvFoldsController,
         trainSplitController: _trainSplitController,
-        onCvFoldChanged: (val) {
-          if (val != null) setState(() => _cvFold = val);
-        },
-        hyperparameters: _defaultHyperparameters,
-        selectedHyperparameters: _selectedHyperparameters,
-        onToggleHyperparameter: (name) {
-          setState(() {
-            if (_selectedHyperparameters.contains(name)) {
-              _selectedHyperparameters.remove(name);
-            } else {
-              _selectedHyperparameters.add(name);
-            }
-          });
-        },
-        onSelectAllHyperparameters: () {
-          setState(() {
-            _selectedHyperparameters = _defaultHyperparameters.map((p) => p['name'] as String).toSet();
-          });
-        },
-        modelNameError: _modelNameError,
-        trainSplitError: _trainSplitError,
         enabled: !state.isSubmitting,
+        showValidationErrors: _showValidationErrors,
       );
     }
 
@@ -280,44 +235,64 @@ class _TrainingWizardScreenState extends State<TrainingWizardScreen> {
     }
 
     if (state is WizardStep2) {
-      if (_selectedFeatures.isEmpty) return;
-      _bloc.add(ConfirmFeatures(_selectedFeatures));
+      // No validation needed — mandatory features always exist
+      // If still loading, Next is disabled anyway
+      _bloc.add(GoToStep(3));
     }
 
     if (state is WizardStep3) {
-      if (_selectedUseCase == null) return;
-      _bloc.add(ConfirmUseCase(_selectedUseCase!));
+      if (state.selectedUseCase == null) {
+        AppSnackbar.showError(context, 'Please select a use case.');
+        return;
+      }
+      _bloc.add(FetchHparams(state.selectedUseCase!));
     }
 
     if (state is WizardStep4) {
-      final nameError = Validators.validateModelName(_modelNameController.text);
-      final splitError = Validators.validateTrainSplit(_trainSplitController.text);
+      setState(() => _showValidationErrors = true);
 
-      setState(() {
-        _modelNameError = nameError;
-        _trainSplitError = splitError;
-      });
+      final name = _modelNameController.text.trim();
+      final cvText = _cvFoldsController.text.trim();
+      final splitText = _trainSplitController.text.trim();
 
-      if (nameError != null || splitError != null) return;
-      if (_selectedHyperparameters.isEmpty) {
-        AppSnackbar.showError(context, 'Select at least one hyperparameter');
+      // Validate
+      if (name.isEmpty || name.length < 3 || name.length > 64 || name.contains(' ')) return;
+      final cvFolds = int.tryParse(cvText);
+      if (cvFolds == null || cvFolds < 3 || cvFolds > 5000) return;
+      final trainSplit = double.tryParse(splitText);
+      if (trainSplit == null || trainSplit < 0.1 || trainSplit > 0.99) return;
+
+      // Ensure at least one hparam selected
+      final hasSelected = state.selectedParams.values.any((v) => v);
+      if (!hasSelected) {
+        AppSnackbar.showError(context, 'Select at least one hyperparameter.');
         return;
       }
 
-      final hparams = <String, dynamic>{};
-      for (final param in _defaultHyperparameters) {
-        if (_selectedHyperparameters.contains(param['name'])) {
-          hparams[param['name'] as String] = param['value'];
+      // Validate selected hparam values
+      final allParams = {...state.hparams.tier1, ...state.hparams.tier2, ...state.hparams.tier3};
+      for (final entry in allParams.entries) {
+        if (state.selectedParams[entry.key] != true) continue;
+        final raw = state.paramValues[entry.key] ?? '';
+        if (raw.isEmpty) { AppSnackbar.showError(context, '${entry.key}: value required.'); return; }
+        if (entry.value.type == 'int') {
+          final n = int.tryParse(raw);
+          if (n == null) { AppSnackbar.showError(context, '${entry.key}: must be integer.'); return; }
+          if (entry.value.min != null && n < entry.value.min!) { AppSnackbar.showError(context, '${entry.key}: min ${entry.value.min!.toInt()}.'); return; }
+          if (entry.value.max != null && n > entry.value.max!) { AppSnackbar.showError(context, '${entry.key}: max ${entry.value.max!.toInt()}.'); return; }
+        } else if (entry.value.type == 'float') {
+          final n = double.tryParse(raw);
+          if (n == null) { AppSnackbar.showError(context, '${entry.key}: must be number.'); return; }
+          if (entry.value.min != null && n < entry.value.min!) { AppSnackbar.showError(context, '${entry.key}: min ${entry.value.min}.'); return; }
+          if (entry.value.max != null && n > entry.value.max!) { AppSnackbar.showError(context, '${entry.key}: max ${entry.value.max}.'); return; }
         }
       }
 
-      _bloc.add(SubmitTraining(TrainingConfigModel(
-        sessionId: state.sessionId,
-        modelName: _modelNameController.text,
-        cvFold: _cvFold,
-        trainSplit: double.parse(_trainSplitController.text),
-        hyperparameters: hparams,
-      )));
+      _bloc.add(SubmitTraining(
+        modelName: name,
+        trainSplit: trainSplit,
+        cvFolds: cvFolds,
+      ));
     }
   }
 }

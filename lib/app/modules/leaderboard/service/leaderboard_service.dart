@@ -16,8 +16,13 @@ class LeaderboardService {
 
   Future<Response> downloadModel(String modelId) {
     return _dio.get(
-      ApiConstants.modelDownload(modelId),
+      ApiConstants.modelById(modelId) + '/download',
       options: Options(responseType: ResponseType.bytes),
     );
   }
+
+  Future<Response> deleteModel(String modelId) {
+    return _dio.delete(ApiConstants.modelById(modelId));
+  }
+
 }

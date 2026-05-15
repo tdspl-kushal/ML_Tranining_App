@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
-import '../../../data/model/upload_session_model.dart';
+import '../../../data/model/feature_extract_model.dart';
+import '../../../data/model/hparams_model.dart';
 import '../../../data/model/training_result_model.dart';
 
 abstract class TrainingWizardState extends Equatable {
@@ -13,92 +14,180 @@ class WizardInitial extends TrainingWizardState {
   const WizardInitial();
 }
 
+// ─── Step 1: File Upload ────────────────────────────────────────────────────
 class WizardStep1 extends TrainingWizardState {
   final bool isUploading;
   final String? error;
   final String? fileName;
+  final String? filePath;
 
   const WizardStep1({
     this.isUploading = false,
     this.error,
     this.fileName,
+    this.filePath,
   });
 
-  WizardStep1 copyWith({bool? isUploading, String? error, String? fileName}) {
+  WizardStep1 copyWith({bool? isUploading, String? error, String? fileName, String? filePath}) {
     return WizardStep1(
       isUploading: isUploading ?? this.isUploading,
       error: error,
       fileName: fileName ?? this.fileName,
+      filePath: filePath ?? this.filePath,
     );
   }
 
   @override
-  List<Object?> get props => [isUploading, error, fileName];
+  List<Object?> get props => [isUploading, error, fileName, filePath];
 }
 
+// ─── Step 2: Feature Selection ──────────────────────────────────────────────
 class WizardStep2 extends TrainingWizardState {
-  final UploadSessionModel session;
-  final List<String> selectedFeatures;
-  final bool isSubmitting;
+  final String datasetId;
+  final FeatureExtractModel? featureData;
+  final List<String> selectedOptionalFeatures;
+  final List<String> selectedCrossTagFeatures;
+  final bool isLoading;
   final String? error;
 
   const WizardStep2({
-    required this.session,
-    required this.selectedFeatures,
-    this.isSubmitting = false,
+    required this.datasetId,
+    this.featureData,
+    this.selectedOptionalFeatures = const [],
+    this.selectedCrossTagFeatures = const [],
+    this.isLoading = false,
     this.error,
   });
 
+  WizardStep2 copyWith({
+    String? datasetId,
+    FeatureExtractModel? featureData,
+    List<String>? selectedOptionalFeatures,
+    List<String>? selectedCrossTagFeatures,
+    bool? isLoading,
+    String? error,
+  }) {
+    return WizardStep2(
+      datasetId: datasetId ?? this.datasetId,
+      featureData: featureData ?? this.featureData,
+      selectedOptionalFeatures: selectedOptionalFeatures ?? this.selectedOptionalFeatures,
+      selectedCrossTagFeatures: selectedCrossTagFeatures ?? this.selectedCrossTagFeatures,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+    );
+  }
+
   @override
-  List<Object?> get props => [session, selectedFeatures, isSubmitting, error];
+  List<Object?> get props => [datasetId, featureData, selectedOptionalFeatures, selectedCrossTagFeatures, isLoading, error];
 }
 
+// ─── Step 3: Use Case Selection ─────────────────────────────────────────────
 class WizardStep3 extends TrainingWizardState {
-  final String sessionId;
-  final String? featureSchemaId;
-  final List<String> features;
-  final List<String> tags;
   final String? selectedUseCase;
-  final bool isSubmitting;
   final String? error;
 
   const WizardStep3({
-    required this.sessionId,
-    this.featureSchemaId,
-    required this.features,
-    this.tags = const [],
     this.selectedUseCase,
-    this.isSubmitting = false,
     this.error,
   });
 
+  WizardStep3 copyWith({String? selectedUseCase, String? error}) {
+    return WizardStep3(
+      selectedUseCase: selectedUseCase ?? this.selectedUseCase,
+      error: error,
+    );
+  }
+
   @override
-  List<Object?> get props => [sessionId, featureSchemaId, features, tags, selectedUseCase, isSubmitting, error];
+  List<Object?> get props => [selectedUseCase, error];
 }
 
+class WizardStep3Loading extends TrainingWizardState {
+  final String selectedUseCase;
+  const WizardStep3Loading(this.selectedUseCase);
+
+  @override
+  List<Object?> get props => [selectedUseCase];
+}
+
+// ─── Step 4: Configuration ──────────────────────────────────────────────────
 class WizardStep4 extends TrainingWizardState {
-  final String sessionId;
-  final String? featureSchemaId;
-  final List<String> features;
-  final List<String> tags;
-  final String useCase;
+  final HparamsModel hparams;
+  final Map<String, bool> selectedParams;
+  final Map<String, String> paramValues;
+  final String modelName;
+  final int cvFolds;
+  final double trainSplit;
   final bool isSubmitting;
   final String? error;
+  // Carry-forward from steps 1–3
+  final String datasetId;
+  final String featureSchemaId;
+  final String useCase;
+  final List<String> tags;
+  final List<String> mandatoryFeatures;
+  final List<String> optionalFeatures;
+  final List<String> crossTagFeatures;
+  final String targetCol;
 
   const WizardStep4({
-    required this.sessionId,
-    this.featureSchemaId,
-    required this.features,
-    this.tags = const [],
-    required this.useCase,
+    required this.hparams,
+    required this.selectedParams,
+    required this.paramValues,
+    this.modelName = '',
+    this.cvFolds = 5,
+    this.trainSplit = 0.8,
     this.isSubmitting = false,
     this.error,
+    required this.datasetId,
+    required this.featureSchemaId,
+    required this.useCase,
+    required this.tags,
+    required this.mandatoryFeatures,
+    required this.optionalFeatures,
+    required this.crossTagFeatures,
+    required this.targetCol,
   });
 
+  WizardStep4 copyWith({
+    HparamsModel? hparams,
+    Map<String, bool>? selectedParams,
+    Map<String, String>? paramValues,
+    String? modelName,
+    int? cvFolds,
+    double? trainSplit,
+    bool? isSubmitting,
+    String? error,
+  }) {
+    return WizardStep4(
+      hparams: hparams ?? this.hparams,
+      selectedParams: selectedParams ?? this.selectedParams,
+      paramValues: paramValues ?? this.paramValues,
+      modelName: modelName ?? this.modelName,
+      cvFolds: cvFolds ?? this.cvFolds,
+      trainSplit: trainSplit ?? this.trainSplit,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      error: error,
+      datasetId: datasetId,
+      featureSchemaId: featureSchemaId,
+      useCase: useCase,
+      tags: tags,
+      mandatoryFeatures: mandatoryFeatures,
+      optionalFeatures: optionalFeatures,
+      crossTagFeatures: crossTagFeatures,
+      targetCol: targetCol,
+    );
+  }
+
   @override
-  List<Object?> get props => [sessionId, featureSchemaId, features, tags, useCase, isSubmitting, error];
+  List<Object?> get props => [
+        hparams, selectedParams, paramValues, modelName, cvFolds, trainSplit,
+        isSubmitting, error, datasetId, featureSchemaId, useCase, tags,
+        mandatoryFeatures, optionalFeatures, crossTagFeatures, targetCol,
+      ];
 }
 
+// ─── Terminal States ─────────────────────────────────────────────────────────
 class WizardSuccess extends TrainingWizardState {
   final TrainingResultModel result;
 

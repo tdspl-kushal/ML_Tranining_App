@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import '../../../data/model/training_config_model.dart';
 
 abstract class TrainingWizardEvent extends Equatable {
   const TrainingWizardEvent();
@@ -22,31 +21,83 @@ class UploadFile extends TrainingWizardEvent {
   List<Object?> get props => [filePath, fileName];
 }
 
-class ConfirmFeatures extends TrainingWizardEvent {
-  final List<String> features;
-
-  const ConfirmFeatures(this.features);
+// Step 2 events
+class FetchFeatures extends TrainingWizardEvent {
+  final String datasetId;
+  const FetchFeatures(this.datasetId);
 
   @override
-  List<Object?> get props => [features];
+  List<Object?> get props => [datasetId];
 }
 
-class ConfirmUseCase extends TrainingWizardEvent {
-  final String useCase;
+class ToggleOptionalFeature extends TrainingWizardEvent {
+  final String feature;
+  const ToggleOptionalFeature(this.feature);
 
-  const ConfirmUseCase(this.useCase);
+  @override
+  List<Object?> get props => [feature];
+}
+
+class ToggleCrossTagFeature extends TrainingWizardEvent {
+  final String feature;
+  const ToggleCrossTagFeature(this.feature);
+
+  @override
+  List<Object?> get props => [feature];
+}
+
+// Step 3 events
+class SelectUseCase extends TrainingWizardEvent {
+  final String useCase;
+  const SelectUseCase(this.useCase);
 
   @override
   List<Object?> get props => [useCase];
 }
 
-class SubmitTraining extends TrainingWizardEvent {
-  final TrainingConfigModel config;
-
-  const SubmitTraining(this.config);
+class FetchHparams extends TrainingWizardEvent {
+  final String useCase;
+  const FetchHparams(this.useCase);
 
   @override
-  List<Object?> get props => [config];
+  List<Object?> get props => [useCase];
+}
+
+// Step 4 events
+class ToggleHparam extends TrainingWizardEvent {
+  final String key;
+  const ToggleHparam(this.key);
+
+  @override
+  List<Object?> get props => [key];
+}
+
+class UpdateHparamValue extends TrainingWizardEvent {
+  final String key;
+  final String value;
+  const UpdateHparamValue(this.key, this.value);
+
+  @override
+  List<Object?> get props => [key, value];
+}
+
+class SelectAllHparams extends TrainingWizardEvent {
+  const SelectAllHparams();
+}
+
+class SubmitTraining extends TrainingWizardEvent {
+  final String modelName;
+  final double trainSplit;
+  final int cvFolds;
+
+  const SubmitTraining({
+    required this.modelName,
+    required this.trainSplit,
+    required this.cvFolds,
+  });
+
+  @override
+  List<Object?> get props => [modelName, trainSplit, cvFolds];
 }
 
 class GoToStep extends TrainingWizardEvent {

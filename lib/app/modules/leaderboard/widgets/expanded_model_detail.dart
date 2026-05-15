@@ -46,19 +46,54 @@ class ExpandedModelDetail extends StatelessWidget {
       children: [
         _buildSectionTitle('Metrics'),
         const SizedBox(height: 10),
-        ...entry.metrics.entries.map((metric) {
-          final label = metric.key
-              .replaceAll('_', ' ')
-              .split(' ')
-              .map((w) => w.capitalize)
-              .join(' ');
-          return MetricCell(
-            label: label,
-            value: metric.value.toMetric(),
-          );
-        }),
+        if (entry.metrics == null || entry.metrics!.isEmpty)
+          ...[
+            const MetricCell(label: 'Precision', value: '—'),
+            const MetricCell(label: 'Accuracy', value: '—'),
+            const MetricCell(label: 'Recall', value: '—'),
+          ]
+        else
+          ...entry.metrics!.entries.map((metric) {
+            final label = metric.key
+                .replaceAll('_', ' ')
+                .split(' ')
+                .map((w) => w.capitalize)
+                .join(' ');
+            return MetricCell(
+              label: label,
+              value: metric.value.toMetric(),
+            );
+          }),
       ],
     );
+
+    final featureImportanceSection = entry.featureImportance != null && entry.featureImportance!.isNotEmpty
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionTitle('Feature Importance'),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: entry.featureImportance!.entries.map((fi) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppColors.tableBorder),
+                    ),
+                    child: Text(
+                      '${fi.key}: ${fi.value}',
+                      style: AppTextStyles.paramChip,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          )
+        : const SizedBox.shrink();
 
     final fileSection = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,6 +101,12 @@ class ExpandedModelDetail extends StatelessWidget {
         _buildSectionTitle('File trained on'),
         const SizedBox(height: 10),
         DatasetChip(fileName: entry.trainedOnFile),
+        if (entry.trainingDurationSeconds != null) ...[
+          const SizedBox(height: 16),
+          _buildSectionTitle('Training Duration'),
+          const SizedBox(height: 10),
+          Text('${entry.trainingDurationSeconds}s', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+        ],
       ],
     );
 
@@ -84,6 +125,10 @@ class ExpandedModelDetail extends StatelessWidget {
                 parametersSection,
                 const SizedBox(height: 24),
                 metricsSection,
+                if (entry.featureImportance != null && entry.featureImportance!.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  featureImportanceSection,
+                ],
                 const SizedBox(height: 24),
                 fileSection,
               ],
@@ -94,6 +139,10 @@ class ExpandedModelDetail extends StatelessWidget {
                 Expanded(child: parametersSection),
                 const SizedBox(width: 32),
                 Expanded(child: metricsSection),
+                if (entry.featureImportance != null && entry.featureImportance!.isNotEmpty) ...[
+                  const SizedBox(width: 32),
+                  Expanded(child: featureImportanceSection),
+                ],
                 const SizedBox(width: 32),
                 Expanded(child: fileSection),
               ],

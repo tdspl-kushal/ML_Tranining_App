@@ -2,25 +2,16 @@ import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import '../../../core/errors/failures.dart';
 import '../../../data/model/upload_session_model.dart';
+import '../../../data/model/feature_extract_model.dart';
+import '../../../data/model/hparams_model.dart';
 import '../../../data/model/training_result_model.dart';
 import '../service/training_service.dart';
 
 abstract class ITrainingRepository {
   Future<Either<Failure, UploadSessionModel>> uploadFile(String filePath, {String? profileName});
-  Future<Either<Failure, Map<String, dynamic>>> extractFeatures(String datasetId);
-  Future<Either<Failure, Map<String, dynamic>>> getHparams(String useCase);
-  Future<Either<Failure, TrainingResultModel>> trainModel({
-    required String datasetId,
-    required String featureSchemaId,
-    required String modelName,
-    required String useCase,
-    required List<String> tags,
-    required List<String> mandatoryFeatures,
-    required List<String> optionalFeatures,
-    required double trainSplit,
-    required int cvFolds,
-    required Map<String, dynamic> hparams,
-  });
+  Future<Either<Failure, FeatureExtractModel>> extractFeatures(String datasetId);
+  Future<Either<Failure, HparamsModel>> getHparams(String useCase);
+  Future<Either<Failure, TrainingResultModel>> trainModel(Map<String, dynamic> payload);
 }
 
 class TrainingRepository implements ITrainingRepository {
@@ -35,66 +26,46 @@ class TrainingRepository implements ITrainingRepository {
       final session = UploadSessionModel.fromJson(response.data as Map<String, dynamic>);
       return Right(session);
     } on DioException catch (e) {
-      return Left(ServerFailure(e.message ?? 'Upload failed'));
+      return Left(ServerFailure(e.response?.data?['message'] ?? e.message ?? 'Upload failed'));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, Map<String, dynamic>>> extractFeatures(String datasetId) async {
+  Future<Either<Failure, FeatureExtractModel>> extractFeatures(String datasetId) async {
     try {
       final response = await _service.extractFeatures(datasetId);
-      return Right(response.data as Map<String, dynamic>);
+      final model = FeatureExtractModel.fromJson(response.data as Map<String, dynamic>);
+      return Right(model);
     } on DioException catch (e) {
-      return Left(ServerFailure(e.message ?? 'Feature extraction failed'));
+      return Left(ServerFailure(e.response?.data?['message'] ?? e.message ?? 'Feature extraction failed'));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, Map<String, dynamic>>> getHparams(String useCase) async {
+  Future<Either<Failure, HparamsModel>> getHparams(String useCase) async {
     try {
       final response = await _service.getHparams(useCase);
-      return Right(response.data as Map<String, dynamic>);
+      final model = HparamsModel.fromJson(response.data as Map<String, dynamic>);
+      return Right(model);
     } on DioException catch (e) {
-      return Left(ServerFailure(e.message ?? 'Failed to get hyperparameters'));
+      return Left(ServerFailure(e.response?.data?['message'] ?? e.message ?? 'Failed to get hyperparameters'));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, TrainingResultModel>> trainModel({
-    required String datasetId,
-    required String featureSchemaId,
-    required String modelName,
-    required String useCase,
-    required List<String> tags,
-    required List<String> mandatoryFeatures,
-    required List<String> optionalFeatures,
-    required double trainSplit,
-    required int cvFolds,
-    required Map<String, dynamic> hparams,
-  }) async {
+  Future<Either<Failure, TrainingResultModel>> trainModel(Map<String, dynamic> payload) async {
     try {
-      final response = await _service.trainModel(
-        datasetId: datasetId,
-        featureSchemaId: featureSchemaId,
-        modelName: modelName,
-        useCase: useCase,
-        tags: tags,
-        mandatoryFeatures: mandatoryFeatures,
-        optionalFeatures: optionalFeatures,
-        trainSplit: trainSplit,
-        cvFolds: cvFolds,
-        hparams: hparams,
-      );
+      final response = await _service.trainModel(payload);
       final result = TrainingResultModel.fromJson(response.data as Map<String, dynamic>);
       return Right(result);
     } on DioException catch (e) {
-      return Left(ServerFailure(e.message ?? 'Training failed'));
+      return Left(ServerFailure(e.response?.data?['message'] ?? e.message ?? 'Training failed'));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }

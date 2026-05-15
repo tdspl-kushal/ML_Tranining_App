@@ -12,16 +12,12 @@ class LeaderboardTable extends StatelessWidget {
   final List<LeaderboardEntryModel> entries;
   final Set<String> expandedIds;
   final ValueChanged<String> onToggleExpansion;
-  final ValueChanged<LeaderboardEntryModel> onEdit;
-  final ValueChanged<LeaderboardEntryModel> onDelete;
 
   const LeaderboardTable({
     super.key,
     required this.entries,
     required this.expandedIds,
     required this.onToggleExpansion,
-    required this.onEdit,
-    required this.onDelete,
   });
 
   @override
@@ -57,7 +53,7 @@ class LeaderboardTable extends StatelessWidget {
                       SizedBox(width: 100, child: Text('Precision', style: AppTextStyles.tableHeader)),
                       SizedBox(width: 100, child: Text('Accuracy', style: AppTextStyles.tableHeader)),
                       SizedBox(width: 100, child: Text('Recall', style: AppTextStyles.tableHeader)),
-                      SizedBox(width: 60, child: Text('Actions', style: AppTextStyles.tableHeader)),
+                      SizedBox(width: 100, child: Text('Actions', style: AppTextStyles.tableHeader)),
                     ],
                   ),
                 ),
@@ -78,8 +74,6 @@ class LeaderboardTable extends StatelessWidget {
                       entry: entry,
                       isExpanded: expandedIds.contains(entry.id),
                       onToggle: () => onToggleExpansion(entry.id),
-                      onEdit: () => onEdit(entry),
-                      onDelete: () => onDelete(entry),
                     );
                   }),
               ],
@@ -90,3 +84,4 @@ class LeaderboardTable extends StatelessWidget {
     );
   }
 }
+

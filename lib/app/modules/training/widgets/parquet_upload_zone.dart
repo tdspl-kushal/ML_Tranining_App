@@ -9,6 +9,7 @@ import '../../../core/utils/extensions.dart';
 class ParquetUploadZone extends StatefulWidget {
   final ValueChanged<String> onFilePicked;
   final String? uploadedFileName;
+  final String? uploadedFilePath;
   final bool isUploading;
   final String? errorText;
   final VoidCallback? onRemoveFile;
@@ -17,6 +18,7 @@ class ParquetUploadZone extends StatefulWidget {
     super.key,
     required this.onFilePicked,
     this.uploadedFileName,
+    this.uploadedFilePath,
     this.isUploading = false,
     this.errorText,
     this.onRemoveFile,
@@ -32,71 +34,52 @@ class _ParquetUploadZoneState extends State<ParquetUploadZone> {
   @override
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
+    final hasFile = widget.uploadedFileName != null || widget.isUploading;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        DropTarget(
-          onDragEntered: (_) => setState(() => _isDragging = true),
-          onDragExited: (_) => setState(() => _isDragging = false),
-          onDragDone: (details) {
-            setState(() => _isDragging = false);
-            if (details.files.isNotEmpty) {
-              final file = details.files.first;
-              if (file.path.toLowerCase().endsWith('.parquet')) {
-                widget.onFilePicked(file.path);
+        if (!hasFile)
+          DropTarget(
+            onDragEntered: (_) => setState(() => _isDragging = true),
+            onDragExited: (_) => setState(() => _isDragging = false),
+            onDragDone: (details) {
+              setState(() => _isDragging = false);
+              if (details.files.isNotEmpty) {
+                final file = details.files.first;
+                if (file.path.toLowerCase().endsWith('.parquet')) {
+                  widget.onFilePicked(file.path);
+                }
               }
-            }
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: double.infinity,
-            height: isMobile ? 180 : AppDimensions.uploadZoneHeight,
-            decoration: BoxDecoration(
-              color: _isDragging ? AppColors.primaryLight : AppColors.uploadZoneBg,
-              borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
-              border: Border.all(
-                color: _isDragging ? AppColors.primary : AppColors.uploadZoneBorder,
-                width: 1.5,
-                strokeAlign: BorderSide.strokeAlignInside,
-              ),
-            ),
-            child: widget.isUploading
-                ? _buildUploading()
-                : _buildDropZone(isMobile),
-          ),
-        ),
-        // File name chip
-        if (widget.uploadedFileName != null && !widget.isUploading) ...[
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.insert_drive_file, size: 16, color: AppColors.primary),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    widget.uploadedFileName!,
-                    style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w500),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: double.infinity,
+              height: isMobile ? 180 : AppDimensions.uploadZoneHeight,
+              decoration: BoxDecoration(
+                color: _isDragging ? AppColors.primaryLight : AppColors.uploadZoneBg,
+                borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+                border: Border.all(
+                  color: _isDragging ? AppColors.primary : AppColors.uploadZoneBorder,
+                  width: 1.5,
+                  strokeAlign: BorderSide.strokeAlignInside,
                 ),
-                const SizedBox(width: 8),
-                if (widget.onRemoveFile != null)
-                  InkWell(
-                    onTap: widget.onRemoveFile,
-                    child: const Icon(Icons.close, size: 16, color: AppColors.primary),
-                  ),
-              ],
+              ),
+              child: _buildDropZone(isMobile),
             ),
+          )
+        else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.uploadZoneBg,
+              borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+              border: Border.all(color: AppColors.uploadZoneBorder, width: 1),
+            ),
+            child: widget.isUploading ? _buildUploading() : _buildUploadedState(),
           ),
-        ],
+        
         // Error
         if (widget.errorText != null) ...[
           const SizedBox(height: 8),
@@ -105,6 +88,38 @@ class _ParquetUploadZoneState extends State<ParquetUploadZone> {
             style: GoogleFonts.inter(fontSize: 12, color: AppColors.error),
           ),
         ],
+      ],
+    );
+  }
+
+  Widget _buildUploadedState() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.insert_drive_file, size: 20, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                widget.uploadedFileName ?? '',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (widget.onRemoveFile != null)
+              IconButton(
+                onPressed: widget.onRemoveFile,
+                icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.error),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+          ],
+        ),
       ],
     );
   }
@@ -170,7 +185,7 @@ class _ParquetUploadZoneState extends State<ParquetUploadZone> {
         ),
         const SizedBox(height: 16),
         Text(
-          'Uploading...',
+          'Uploading and Processing...',
           style: GoogleFonts.inter(
             fontSize: 14,
             color: AppColors.textSecondary,
@@ -184,9 +199,12 @@ class _ParquetUploadZoneState extends State<ParquetUploadZone> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['parquet'],
+      allowMultiple: false,
     );
     if (result != null && result.files.single.path != null) {
       widget.onFilePicked(result.files.single.path!);
     }
   }
+
 }
+

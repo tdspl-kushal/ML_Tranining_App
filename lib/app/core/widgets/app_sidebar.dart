@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_dimensions.dart';
 import '../theme/app_text_styles.dart';
@@ -176,11 +176,15 @@ class _NavItemState extends State<_NavItem> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: widget.isCollapsed ? 8 : 12, vertical: 2),
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: GestureDetector(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
           onTap: widget.onTap,
+          onHover: (hovering) => setState(() => _isHovered = hovering),
+          hoverColor: Colors.transparent, // We handle hover color in AnimatedContainer
+          splashColor: AppColors.primaryLight.withOpacity(0.3),
+          highlightColor: Colors.transparent,
+          borderRadius: BorderRadius.circular(AppDimensions.buttonRadius),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -189,7 +193,7 @@ class _NavItemState extends State<_NavItem> {
                   ? AppColors.activeNavBg
                   : _isHovered
                       ? AppColors.scaffoldBg
-                      : Colors.transparent,
+                      : AppColors.scaffoldBg.withAlpha(0),
               borderRadius: BorderRadius.circular(AppDimensions.buttonRadius),
             ),
             child: SingleChildScrollView(

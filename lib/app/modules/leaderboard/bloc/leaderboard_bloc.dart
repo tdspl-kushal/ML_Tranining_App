@@ -10,7 +10,6 @@ class LeaderboardBloc extends Bloc<LeaderboardEvent, LeaderboardState> {
     on<LoadLeaderboard>(_onLoadLeaderboard);
     on<ToggleModelExpansion>(_onToggleExpansion);
     on<DownloadModel>(_onDownloadModel);
-    on<RenameModel>(_onRenameModel);
     on<DeleteModel>(_onDeleteModel);
   }
 
@@ -40,37 +39,30 @@ class LeaderboardBloc extends Bloc<LeaderboardEvent, LeaderboardState> {
   }
 
   Future<void> _onDownloadModel(DownloadModel event, Emitter<LeaderboardState> emit) async {
-    // TODO: Implement model download
-  }
-
-  Future<void> _onRenameModel(RenameModel event, Emitter<LeaderboardState> emit) async {
-    // TODO: Implement rename API call with payload: profileId, modelId, newName
-    // For now, optimistic update
-    final currentState = state;
-    if (currentState is LeaderboardLoaded) {
-      final updatedEntries = currentState.entries.map((e) {
-        if (e.id == event.modelId) {
-          return e.copyWith(name: event.newName);
-        }
-        return e;
-      }).toList();
-      emit(LeaderboardLoaded(
-        entries: updatedEntries,
-        expandedIds: currentState.expandedIds,
-      ));
-    }
+    emit(ModelDownloading(event.modelId));
+    final result = await _repository.downloadModel(event.modelId, event.modelName);
+    result.fold(
+      (failure) => emit(ModelDownloadError(failure.message)),
+      (filePath) => emit(ModelDownloadSuccess(filePath)),
+    );
   }
 
   Future<void> _onDeleteModel(DeleteModel event, Emitter<LeaderboardState> emit) async {
-    // TODO: Implement delete API call
-    // For now, optimistic update
-    final currentState = state;
-    if (currentState is LeaderboardLoaded) {
-      final updatedEntries = currentState.entries.where((e) => e.id != event.modelId).toList();
-      emit(LeaderboardLoaded(
-        entries: updatedEntries,
-        expandedIds: currentState.expandedIds,
-      ));
-    }
+    emit(ModelDeleting());
+    final result = await _repository.deleteModel(event.modelId);
+    result.fold(
+      (failure) => emit(ModelDeleteError(failure.message)),
+      (_) {
+        if (state is LeaderboardLoaded) {
+          final current = (state as LeaderboardLoaded);
+          final updated = current.entries
+              .where((e) => e.id != event.modelId)
+              .toList();
+          emit(current.copyWith(entries: updated));
+          emit(ModelDeleteSuccess(event.modelId));
+        }
+      },
+    );
   }
 }
+

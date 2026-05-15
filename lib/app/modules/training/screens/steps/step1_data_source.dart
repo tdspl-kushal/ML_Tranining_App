@@ -6,6 +6,7 @@ import '../../widgets/profile_exists_banner.dart';
 
 class Step1DataSource extends StatelessWidget {
   final String? fileName;
+  final String? filePath;
   final bool isUploading;
   final String? error;
   final bool profileExists;
@@ -16,6 +17,7 @@ class Step1DataSource extends StatelessWidget {
   const Step1DataSource({
     super.key,
     this.fileName,
+    this.filePath,
     this.isUploading = false,
     this.error,
     this.profileExists = false,
@@ -43,6 +45,7 @@ class Step1DataSource extends StatelessWidget {
         ParquetUploadZone(
           onFilePicked: onFilePicked,
           uploadedFileName: fileName,
+          uploadedFilePath: filePath,
           isUploading: isUploading,
           errorText: error,
           onRemoveFile: onRemoveFile,

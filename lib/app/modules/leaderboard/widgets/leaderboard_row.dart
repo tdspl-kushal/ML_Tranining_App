@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:open_file/open_file.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/extensions.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../data/model/leaderboard_entry_model.dart';
+import '../bloc/leaderboard_bloc.dart';
+import '../bloc/leaderboard_event.dart';
+import '../bloc/leaderboard_state.dart';
 import 'expanded_model_detail.dart';
 
 class LeaderboardRow extends StatefulWidget {
   final LeaderboardEntryModel entry;
   final bool isExpanded;
   final VoidCallback onToggle;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
 
   const LeaderboardRow({
     super.key,
     required this.entry,
     required this.isExpanded,
     required this.onToggle,
-    required this.onEdit,
-    required this.onDelete,
   });
 
   @override
@@ -29,8 +31,38 @@ class LeaderboardRow extends StatefulWidget {
 class _LeaderboardRowState extends State<LeaderboardRow> {
   bool _isHovered = false;
 
+  void _showDeleteConfirmation(BuildContext context, String modelId, String modelName) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Model'),
+        content: Text(
+          'Are you sure you want to delete "$modelName"? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              context.read<LeaderboardBloc>().add(DeleteModel(modelId));
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final displayLabel = widget.entry.modelName ?? 'v${widget.entry.version}';
+    final downloadName = widget.entry.modelName ?? 'model_v${widget.entry.version}';
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -68,16 +100,20 @@ class _LeaderboardRowState extends State<LeaderboardRow> {
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: widget.entry.status == 'active' || widget.entry.status == 'completed'
+                          color: widget.entry.status == 'completed'
                               ? AppColors.statusActive
-                              : AppColors.statusInactive,
+                              : widget.entry.status == 'training'
+                                  ? Colors.amber
+                                  : widget.entry.status == 'error'
+                                      ? AppColors.error
+                                      : AppColors.statusInactive,
                           shape: BoxShape.circle,
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          widget.entry.name,
+                          displayLabel,
                           style: AppTextStyles.tableRow,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -111,23 +147,62 @@ class _LeaderboardRowState extends State<LeaderboardRow> {
                 ),
                 // Actions
                 SizedBox(
-                  width: 60,
-                  child: _isHovered
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            InkWell(
-                              onTap: widget.onEdit,
-                              child: const Icon(Icons.edit_outlined, size: 20, color: AppColors.primary),
-                            ),
-                            const SizedBox(width: 12),
-                            InkWell(
-                              onTap: widget.onDelete,
-                              child: const Icon(Icons.delete_outline, size: 20, color: AppColors.error),
-                            ),
-                          ],
-                        )
-                      : const SizedBox.shrink(),
+                  width: 100,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 150),
+                    opacity: _isHovered ? 1.0 : 0.0,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        BlocConsumer<LeaderboardBloc, LeaderboardState>(
+                          listener: (context, state) {
+                            if (state is ModelDownloadSuccess) {
+                              AppSnackbar.showSuccess(context, 'Saved to ${state.filePath}');
+                              OpenFile.open(state.filePath);
+                            }
+                            if (state is ModelDownloadError) {
+                              AppSnackbar.showError(context, state.message);
+                            }
+                          },
+                          builder: (context, state) {
+                            final isDownloading =
+                                state is ModelDownloading && state.modelId == widget.entry.id;
+
+                            return isDownloading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.primary,
+                                    ),
+                                  )
+                                : IconButton(
+                                    icon: const Icon(
+                                      Icons.download_outlined,
+                                      size: 20,
+                                      color: AppColors.primary,
+                                    ),
+                                    tooltip: 'Download model',
+                                    onPressed: _isHovered
+                                        ? () => context.read<LeaderboardBloc>().add(
+                                              DownloadModel(widget.entry.id, downloadName),
+                                            )
+                                        : null,
+                                  );
+                          },
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.textSecondary),
+                          tooltip: 'Delete model',
+                          onPressed: _isHovered
+                              ? () => _showDeleteConfirmation(context, widget.entry.id, displayLabel)
+                              : null,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -143,3 +218,5 @@ class _LeaderboardRowState extends State<LeaderboardRow> {
     );
   }
 }
+
+

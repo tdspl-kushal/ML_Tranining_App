@@ -27,27 +27,15 @@ class ToggleModelExpansion extends LeaderboardEvent {
 
 class DownloadModel extends LeaderboardEvent {
   final String modelId;
+  final String modelName;
 
-  const DownloadModel(this.modelId);
-
-  @override
-  List<Object?> get props => [modelId];
-}
-
-class RenameModel extends LeaderboardEvent {
-  final String profileId;
-  final String modelId;
-  final String newName;
-
-  const RenameModel({
-    required this.profileId,
-    required this.modelId,
-    required this.newName,
-  });
+  const DownloadModel(this.modelId, this.modelName);
 
   @override
-  List<Object?> get props => [profileId, modelId, newName];
+  List<Object?> get props => [modelId, modelName];
 }
+
+
 
 class DeleteModel extends LeaderboardEvent {
   final String modelId;
