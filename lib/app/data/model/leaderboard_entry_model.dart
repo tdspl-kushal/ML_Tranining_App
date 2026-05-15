@@ -33,47 +33,84 @@ class LeaderboardEntryModel extends Equatable {
     this.trainingDurationSeconds,
   });
 
-  factory LeaderboardEntryModel.fromJson(Map<String, dynamic> json) {
-    return LeaderboardEntryModel(
-      id: json['id']?.toString() ?? '',
-      modelName: json['model_name']?.toString(),
-      version: json['version'] is int ? json['version'] as int : int.tryParse(json['version']?.toString() ?? '1') ?? 1,
-      useCase: json['use_case'] ?? '',
-      precision: (json['precision'] ?? 0).toDouble(),
-      accuracy: (json['accuracy'] ?? 0).toDouble(),
-      recall: (json['recall'] ?? 0).toDouble(),
-      status: json['status'] ?? 'inactive',
-      parameters: Map<String, dynamic>.from(json['parameters'] ?? json['hparams'] ?? {}),
-      metrics: json['metrics'] != null ? Map<String, double>.from(
-        (json['metrics'] as Map).map((k, v) => MapEntry(k.toString(), (v as num).toDouble())),
-      ) : null,
-      featureImportance: json['feature_importance'] != null ? Map<String, dynamic>.from(json['feature_importance']) : null,
-      trainedOnFile: json['trained_on_file'] ?? json['dataset_file'] ?? '',
-      trainedOnFileUrl: json['trained_on_file_url'] ?? '',
-      trainingDurationSeconds: json['training_duration_seconds'] is int 
-          ? json['training_duration_seconds'] as int 
-          : int.tryParse(json['training_duration_seconds']?.toString() ?? ''),
-    );
-  }
+factory LeaderboardEntryModel.fromJson(
+    Map<String, dynamic> json) {
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'model_name': modelName,
-      'version': version,
-      'use_case': useCase,
-      'precision': precision,
-      'accuracy': accuracy,
-      'recall': recall,
-      'status': status,
-      'parameters': parameters,
-      'metrics': metrics,
-      'feature_importance': featureImportance,
-      'trained_on_file': trainedOnFile,
-      'trained_on_file_url': trainedOnFileUrl,
-      'training_duration_seconds': trainingDurationSeconds,
-    };
-  }
+  final metricsJson =
+      json['metrics'] as Map<String, dynamic>? ?? {};
+
+  return LeaderboardEntryModel(
+    id: json['id']?.toString() ?? '',
+
+    modelName: json['model_name']?.toString(),
+
+    version: json['version'] is int
+        ? json['version'] as int
+        : int.tryParse(
+              json['version']?.toString() ?? '1',
+            ) ??
+            1,
+
+    useCase: json['use_case'] ?? '',
+
+    precision: metricsJson['precision'] is num
+        ? (metricsJson['precision'] as num).toDouble()
+        : 0.0,
+
+    accuracy: metricsJson['accuracy'] is num
+        ? (metricsJson['accuracy'] as num).toDouble()
+        : 0.0,
+
+    recall: metricsJson['recall'] is num
+        ? (metricsJson['recall'] as num).toDouble()
+        : 0.0,
+
+    status: json['status'] ?? 'inactive',
+
+    parameters: Map<String, dynamic>.from(
+      json['parameters'] ??
+          json['hparams'] ??
+          json['hparams_used'] ??
+          {},
+    ),
+
+    metrics: Map<String, double>.fromEntries(
+      metricsJson.entries
+          .where((e) => e.value is num)
+          .map(
+            (e) => MapEntry(
+              e.key,
+              (e.value as num).toDouble(),
+            ),
+          ),
+    ),
+
+    featureImportance:
+        json['feature_importance'] != null
+            ? Map<String, dynamic>.from(
+                json['feature_importance'],
+              )
+            : null,
+
+    trainedOnFile:
+        json['trained_on_file'] ??
+            json['dataset_file'] ??
+            '',
+
+    trainedOnFileUrl:
+        json['trained_on_file_url'] ?? '',
+
+    trainingDurationSeconds:
+        json['training_duration_seconds'] is num
+            ? (json['training_duration_seconds'] as num)
+                .toInt()
+            : int.tryParse(
+                json['training_duration_seconds']
+                        ?.toString() ??
+                    '',
+              ),
+  );
+}
 
   LeaderboardEntryModel copyWith({
     String? id,
