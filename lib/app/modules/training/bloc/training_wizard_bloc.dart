@@ -57,8 +57,14 @@ class TrainingWizardBloc extends Bloc<TrainingWizardEvent, TrainingWizardState> 
       )),
       (session) {
         _session = session;
-        // Transition to Step 2 — feature extraction fires immediately on mount
-        emit(WizardStep2(datasetId: session.sessionId, isLoading: false));
+        // Stay on Step 1 with the datasetId so the preview grid is shown.
+        // The user clicks Next to advance to Step 2 / feature extraction.
+        emit(WizardStep1(
+          isUploading: false,
+          fileName: event.fileName,
+          filePath: event.filePath,
+          datasetId: session.sessionId,
+        ));
       },
     );
   }

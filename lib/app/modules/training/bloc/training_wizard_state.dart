@@ -20,25 +20,35 @@ class WizardStep1 extends TrainingWizardState {
   final String? error;
   final String? fileName;
   final String? filePath;
+  /// Populated after a successful ingest — enables the preview grid.
+  final String? datasetId;
 
   const WizardStep1({
     this.isUploading = false,
     this.error,
     this.fileName,
     this.filePath,
+    this.datasetId,
   });
 
-  WizardStep1 copyWith({bool? isUploading, String? error, String? fileName, String? filePath}) {
+  WizardStep1 copyWith({
+    bool? isUploading,
+    String? error,
+    String? fileName,
+    String? filePath,
+    String? datasetId,
+  }) {
     return WizardStep1(
       isUploading: isUploading ?? this.isUploading,
       error: error,
       fileName: fileName ?? this.fileName,
       filePath: filePath ?? this.filePath,
+      datasetId: datasetId ?? this.datasetId,
     );
   }
 
   @override
-  List<Object?> get props => [isUploading, error, fileName, filePath];
+  List<Object?> get props => [isUploading, error, fileName, filePath, datasetId];
 }
 
 // ─── Step 2: Feature Selection ──────────────────────────────────────────────

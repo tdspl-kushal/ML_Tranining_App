@@ -212,17 +212,23 @@ class _TrainingWizardScreenState extends State<TrainingWizardScreen> {
         filePath: _selectedFilePath ?? state.filePath,
         isUploading: state.isUploading,
         error: state.error,
+        datasetId: state.datasetId,
         onFilePicked: (path) {
+          final name = path.split('/').last.split('\\').last;
           setState(() {
             _selectedFilePath = path;
-            _selectedFileName = path.split('/').last.split('\\').last;
+            _selectedFileName = name;
           });
+          // Auto-upload as soon as the file is picked.
+          _bloc.add(UploadFile(filePath: path, fileName: name));
         },
         onRemoveFile: () {
           setState(() {
             _selectedFilePath = null;
             _selectedFileName = null;
           });
+          // Also reset the BLoC so datasetId and preview are cleared.
+          _bloc.add(const StartWizard());
         },
       );
     }
@@ -251,6 +257,12 @@ class _TrainingWizardScreenState extends State<TrainingWizardScreen> {
 
   void _handleNext(TrainingWizardState state) {
     if (state is WizardStep1) {
+      if (_selectedFilePath == null && state.filePath == null) return;
+      // If the upload already succeeded (datasetId present), go straight to Step 2.
+      if (state.datasetId != null) {
+        _bloc.add(FetchFeatures(state.datasetId!));
+        return;
+      }
       if (_selectedFilePath == null) return;
       _bloc.add(UploadFile(filePath: _selectedFilePath!, fileName: _selectedFileName!));
     }
