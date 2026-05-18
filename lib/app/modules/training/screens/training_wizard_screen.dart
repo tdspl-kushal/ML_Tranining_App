@@ -8,9 +8,13 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/extensions.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/step_progress_indicator.dart';
+import '../bloc/streaming_bloc.dart';
+import '../bloc/streaming_event.dart';
 import '../bloc/training_wizard_bloc.dart';
 import '../bloc/training_wizard_event.dart';
 import '../bloc/training_wizard_state.dart';
+import '../repository/training_repository.dart';
+import '../widgets/training_stream_modal.dart';
 import '../widgets/wizard_navigation_bar.dart';
 import 'steps/step1_data_source.dart';
 import 'steps/step2_features.dart';
@@ -77,15 +81,32 @@ class _TrainingWizardScreenState extends State<TrainingWizardScreen> {
       child: BlocConsumer<TrainingWizardBloc, TrainingWizardState>(
         listener: (context, state) {
           if (state is WizardSuccess) {
+            final initialResult = state.result;
+            // Close the wizard
             Navigator.of(context).pop();
             widget.onComplete();
-            AppSnackbar.showSuccess(context, 'Training started successfully!');
+            // Open the streaming modal scoped with its own StreamingBloc
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => BlocProvider(
+                create: (_) => StreamingBloc(
+                  GetIt.instance<ITrainingRepository>(),
+                )..add(StartStreaming(initialResult)),
+                child: const TrainingStreamModal(),
+              ),
+            );
           }
           if (state is WizardStep4 && state.error != null) {
-            AppSnackbar.showError(context, state.error!);
+            AppSnackbar.showError(
+                context, 'Failed to start training: ${state.error!}');
           }
           if (state is WizardStep3 && state.error != null) {
             AppSnackbar.showError(context, state.error!);
+          }
+          if (state is WizardStep2 && state.error != null) {
+            AppSnackbar.showError(
+                context, 'Failed to extract features: ${state.error!}');
           }
         },
         builder: (context, state) {

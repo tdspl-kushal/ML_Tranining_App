@@ -36,15 +36,18 @@ class _ProfileListTileState extends State<ProfileListTile> {
       onExit: (_) => setState(() => _isHovered = false),
       child: InkWell(
         onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        child: Container(
           decoration: BoxDecoration(
-            color: _isHovered ? AppColors.scaffoldBg : AppColors.white,
-            border: const Border(
-              bottom: BorderSide(color: AppColors.tableBorder),
+            color: _isHovered ? AppColors.primaryLight.withOpacity(0.3) : AppColors.white,
+            border: Border(
+              bottom: const BorderSide(color: AppColors.tableBorder),
+              left: BorderSide(
+                color: _isHovered ? AppColors.primary : Colors.transparent,
+                width: 4,
+              ),
             ),
           ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               // Index
@@ -97,12 +100,9 @@ class _ProfileListTileState extends State<ProfileListTile> {
                           ),
                         ],
                       )
-                    : const Row(
-                        children: [
-                          Icon(Icons.more_horiz, color: AppColors.textTertiary),
-                        ],
-                      ),
+                    : const SizedBox(),
               ),
+
             ],
           ),
         ),

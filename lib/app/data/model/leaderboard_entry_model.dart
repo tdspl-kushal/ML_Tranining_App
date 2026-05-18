@@ -3,164 +3,157 @@ import 'package:equatable/equatable.dart';
 class LeaderboardEntryModel extends Equatable {
   final String id;
   final String? modelName;
-  final int version;
   final String useCase;
-  final double precision;
-  final double accuracy;
-  final double recall;
+  final String modelType;
+  final int version;
   final String status;
-  final Map<String, dynamic> parameters;
-  final Map<String, double>? metrics;
-  final Map<String, dynamic>? featureImportance;
-  final String trainedOnFile;
-  final String trainedOnFileUrl;
-  final int? trainingDurationSeconds;
+  final Map<String, dynamic>? metrics;
+  final Map<String, double>? featureImportance;
+  final Map<String, dynamic> hparamsUsed;
+  final List<String> tagsUsed;
+  final double? trainingDurationSeconds;
+  final String? completedAt;
+  final String createdAt;
 
   const LeaderboardEntryModel({
     required this.id,
     this.modelName,
-    required this.version,
     required this.useCase,
-    required this.precision,
-    required this.accuracy,
-    required this.recall,
+    this.modelType = '',
+    required this.version,
     required this.status,
-    required this.parameters,
     this.metrics,
     this.featureImportance,
-    required this.trainedOnFile,
-    required this.trainedOnFileUrl,
+    this.hparamsUsed = const {},
+    this.tagsUsed = const [],
     this.trainingDurationSeconds,
+    this.completedAt,
+    this.createdAt = '',
   });
 
-factory LeaderboardEntryModel.fromJson(
-    Map<String, dynamic> json) {
+  /// Display name: prefer model_name, fall back to "v{version}"
+  String get displayName => modelName?.isNotEmpty == true ? modelName! : 'v$version';
 
-  final metricsJson =
-      json['metrics'] as Map<String, dynamic>? ?? {};
+  // Dynamic IMP Metrics Helpers
+  String? get impPrimaryMetric => _getImpMetricName('primary');
+  double? get impPrimaryValue => _getImpMetricValue('primary');
 
-  return LeaderboardEntryModel(
-    id: json['id']?.toString() ?? '',
+  String? get impSecondaryMetric => _getImpMetricName('secondary');
+  double? get impSecondaryValue => _getImpMetricValue('secondary');
 
-    modelName: json['model_name']?.toString(),
+  String? get impTertiaryMetric => _getImpMetricName('tertiary');
+  double? get impTertiaryValue => _getImpMetricValue('tertiary');
 
-    version: json['version'] is int
-        ? json['version'] as int
-        : int.tryParse(
-              json['version']?.toString() ?? '1',
-            ) ??
-            1,
+  String? _getImpMetricName(String level) {
+    if (metrics == null || metrics!['imp'] == null) return null;
+    final imp = metrics!['imp'];
+    if (imp is Map && imp[level] is Map) {
+      return imp[level]['metric']?.toString();
+    }
+    return null;
+  }
 
-    useCase: json['use_case'] ?? '',
+  double? _getImpMetricValue(String level) {
+    if (metrics == null || metrics!['imp'] == null) return null;
+    final imp = metrics!['imp'];
+    if (imp is Map && imp[level] is Map) {
+      final val = imp[level]['value'];
+      if (val is num) return val.toDouble();
+    }
+    return null;
+  }
 
-    precision: metricsJson['precision'] is num
-        ? (metricsJson['precision'] as num).toDouble()
-        : 0.0,
+  factory LeaderboardEntryModel.fromJson(Map<String, dynamic> json) {
+    // Metrics
+    Map<String, dynamic>? metricsMap;
+    if (json['metrics'] is Map) {
+      metricsMap = Map<String, dynamic>.from(json['metrics'] as Map);
+    }
 
-    accuracy: metricsJson['accuracy'] is num
-        ? (metricsJson['accuracy'] as num).toDouble()
-        : 0.0,
+    // Feature importance
+    Map<String, double>? fi;
+    if (json['feature_importance'] is Map) {
+      fi = Map<String, double>.fromEntries(
+        (json['feature_importance'] as Map).entries
+            .where((e) => e.value is num)
+            .map((e) => MapEntry(e.key as String, (e.value as num).toDouble())),
+      );
+    }
 
-    recall: metricsJson['recall'] is num
-        ? (metricsJson['recall'] as num).toDouble()
-        : 0.0,
+    // Hparams used
+    Map<String, dynamic> hparams = {};
+    for (final key in ['hparams_used', 'hparams', 'parameters']) {
+      if (json[key] is Map) {
+        hparams = Map<String, dynamic>.from(json[key] as Map);
+        break;
+      }
+    }
 
-    status: json['status'] ?? 'inactive',
+    // Tags used
+    List<String> tags = [];
+    if (json['tags_used'] is List) {
+      tags = List<String>.from(json['tags_used'] as List);
+    } else if (json['tags'] is List) {
+      tags = List<String>.from(json['tags'] as List);
+    }
 
-    parameters: Map<String, dynamic>.from(
-      json['parameters'] ??
-          json['hparams'] ??
-          json['hparams_used'] ??
-          {},
-    ),
-
-    metrics: Map<String, double>.fromEntries(
-      metricsJson.entries
-          .where((e) => e.value is num)
-          .map(
-            (e) => MapEntry(
-              e.key,
-              (e.value as num).toDouble(),
-            ),
-          ),
-    ),
-
-    featureImportance:
-        json['feature_importance'] != null
-            ? Map<String, dynamic>.from(
-                json['feature_importance'],
-              )
-            : null,
-
-    trainedOnFile:
-        json['trained_on_file'] ??
-            json['dataset_file'] ??
-            '',
-
-    trainedOnFileUrl:
-        json['trained_on_file_url'] ?? '',
-
-    trainingDurationSeconds:
-        json['training_duration_seconds'] is num
-            ? (json['training_duration_seconds'] as num)
-                .toInt()
-            : int.tryParse(
-                json['training_duration_seconds']
-                        ?.toString() ??
-                    '',
-              ),
-  );
-}
+    return LeaderboardEntryModel(
+      id: json['id']?.toString() ?? '',
+      modelName: json['model_name']?.toString(),
+      useCase: json['use_case']?.toString() ?? '',
+      modelType: json['model_type']?.toString() ?? '',
+      version: json['version'] is int
+          ? json['version'] as int
+          : int.tryParse(json['version']?.toString() ?? '1') ?? 1,
+      status: json['status']?.toString() ?? 'inactive',
+      metrics: metricsMap,
+      featureImportance: fi,
+      hparamsUsed: hparams,
+      tagsUsed: tags,
+      trainingDurationSeconds: json['training_duration_seconds'] is num
+          ? (json['training_duration_seconds'] as num).toDouble()
+          : null,
+      completedAt: json['completed_at']?.toString(),
+      createdAt: json['created_at']?.toString() ?? '',
+    );
+  }
 
   LeaderboardEntryModel copyWith({
     String? id,
     String? modelName,
-    int? version,
     String? useCase,
-    double? precision,
-    double? accuracy,
-    double? recall,
+    String? modelType,
+    int? version,
     String? status,
-    Map<String, dynamic>? parameters,
-    Map<String, double>? metrics,
-    Map<String, dynamic>? featureImportance,
-    String? trainedOnFile,
-    String? trainedOnFileUrl,
-    int? trainingDurationSeconds,
+    Map<String, dynamic>? metrics,
+    Map<String, double>? featureImportance,
+    Map<String, dynamic>? hparamsUsed,
+    List<String>? tagsUsed,
+    double? trainingDurationSeconds,
+    String? completedAt,
+    String? createdAt,
   }) {
     return LeaderboardEntryModel(
       id: id ?? this.id,
       modelName: modelName ?? this.modelName,
-      version: version ?? this.version,
       useCase: useCase ?? this.useCase,
-      precision: precision ?? this.precision,
-      accuracy: accuracy ?? this.accuracy,
-      recall: recall ?? this.recall,
+      modelType: modelType ?? this.modelType,
+      version: version ?? this.version,
       status: status ?? this.status,
-      parameters: parameters ?? this.parameters,
       metrics: metrics ?? this.metrics,
       featureImportance: featureImportance ?? this.featureImportance,
-      trainedOnFile: trainedOnFile ?? this.trainedOnFile,
-      trainedOnFileUrl: trainedOnFileUrl ?? this.trainedOnFileUrl,
+      hparamsUsed: hparamsUsed ?? this.hparamsUsed,
+      tagsUsed: tagsUsed ?? this.tagsUsed,
       trainingDurationSeconds: trainingDurationSeconds ?? this.trainingDurationSeconds,
+      completedAt: completedAt ?? this.completedAt,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
   @override
   List<Object?> get props => [
-        id,
-        modelName,
-        version,
-        useCase,
-        precision,
-        accuracy,
-        recall,
-        status,
-        parameters,
-        metrics,
-        featureImportance,
-        trainedOnFile,
-        trainedOnFileUrl,
-        trainingDurationSeconds,
+        id, modelName, useCase, modelType, version, status,
+        metrics, featureImportance, hparamsUsed, tagsUsed,
+        trainingDurationSeconds, completedAt, createdAt,
       ];
 }

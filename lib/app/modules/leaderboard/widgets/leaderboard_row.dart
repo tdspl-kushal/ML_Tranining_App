@@ -14,12 +14,14 @@ import 'expanded_model_detail.dart';
 
 class LeaderboardRow extends StatefulWidget {
   final LeaderboardEntryModel entry;
+  final String? activeFilter;
   final bool isExpanded;
   final VoidCallback onToggle;
 
   const LeaderboardRow({
     super.key,
     required this.entry,
+    this.activeFilter,
     required this.isExpanded,
     required this.onToggle,
   });
@@ -31,7 +33,8 @@ class LeaderboardRow extends StatefulWidget {
 class _LeaderboardRowState extends State<LeaderboardRow> {
   bool _isHovered = false;
 
-  void _showDeleteConfirmation(BuildContext context, String modelId, String modelName) {
+  void _showDeleteConfirmation(
+      BuildContext context, String modelId, String modelName) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -51,17 +54,25 @@ class _LeaderboardRowState extends State<LeaderboardRow> {
               Navigator.of(dialogContext).pop();
               context.read<LeaderboardBloc>().add(DeleteModel(modelId));
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            child:
+                const Text('Delete', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
 
+  String _formatDynamicMetric(double? val) {
+    if (val == null) return '—';
+    return val.toMetric();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final displayLabel = widget.entry.modelName ?? 'v${widget.entry.version}';
-    final downloadName = widget.entry.modelName ?? 'model_v${widget.entry.version}';
+    final entry = widget.entry;
+    final displayName = entry.displayName;
+    final downloadName = entry.modelName ?? 'model_v${entry.version}';
+    final bool isAll = widget.activeFilter == null;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -71,10 +82,18 @@ class _LeaderboardRowState extends State<LeaderboardRow> {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: _isHovered ? AppColors.scaffoldBg : Colors.transparent,
-              border: const Border(bottom: BorderSide(color: AppColors.tableBorder)),
+              color: _isHovered
+                  ? AppColors.primaryLight.withOpacity(0.3)
+                  : AppColors.white,
+              border: Border(
+                bottom: const BorderSide(color: AppColors.tableBorder),
+                left: BorderSide(
+                  color: _isHovered ? AppColors.primary : Colors.transparent,
+                  width: 4,
+                ),
+              ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
                 // Expand toggle
@@ -83,7 +102,9 @@ class _LeaderboardRowState extends State<LeaderboardRow> {
                   child: IconButton(
                     onPressed: widget.onToggle,
                     icon: Icon(
-                      widget.isExpanded ? Icons.indeterminate_check_box_outlined : Icons.add_box_outlined,
+                      widget.isExpanded
+                          ? Icons.indeterminate_check_box_outlined
+                          : Icons.add_box_outlined,
                       size: 20,
                       color: AppColors.textSecondary,
                     ),
@@ -92,19 +113,19 @@ class _LeaderboardRowState extends State<LeaderboardRow> {
                   ),
                 ),
                 // Model name with status dot
-                SizedBox(
-                  width: 250,
+                Expanded(
+                  flex: 3,
                   child: Row(
                     children: [
                       Container(
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: widget.entry.status == 'completed'
+                          color: entry.status == 'completed'
                               ? AppColors.statusActive
-                              : widget.entry.status == 'training'
+                              : entry.status == 'training'
                                   ? Colors.amber
-                                  : widget.entry.status == 'error'
+                                  : entry.status == 'error'
                                       ? AppColors.error
                                       : AppColors.statusInactive,
                           shape: BoxShape.circle,
@@ -113,7 +134,7 @@ class _LeaderboardRowState extends State<LeaderboardRow> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          displayLabel,
+                          displayName,
                           style: AppTextStyles.tableRow,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -121,30 +142,41 @@ class _LeaderboardRowState extends State<LeaderboardRow> {
                     ],
                   ),
                 ),
-                // Use case
-                SizedBox(
-                  width: 200,
-                  child: Text(
-                    widget.entry.useCase.replaceAll('_', ' ').split(' ').map((w) => w.capitalize).join(' '),
-                    style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
-                    overflow: TextOverflow.ellipsis,
+                // Use case — use toUseCaseLabel()
+                if (isAll)
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      entry.useCase.toUseCaseLabel(),
+                      style: GoogleFonts.inter(
+                          fontSize: 14, color: AppColors.textSecondary),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-                // Precision
-                SizedBox(
-                  width: 100,
-                  child: Text(widget.entry.precision.toMetric(), style: AppTextStyles.metricValue),
-                ),
-                // Accuracy
-                SizedBox(
-                  width: 100,
-                  child: Text(widget.entry.accuracy.toMetric(), style: AppTextStyles.metricValue),
-                ),
-                // Recall
-                SizedBox(
-                  width: 100,
-                  child: Text(widget.entry.recall.toMetric(), style: AppTextStyles.metricValue),
-                ),
+                // Col 1
+                if (!isAll)
+                  SizedBox(
+                    width: 100,
+                    child: Text(
+                        _formatDynamicMetric(entry.impPrimaryValue),
+                        style: AppTextStyles.metricValue),
+                  ),
+                // Col 2
+                if (!isAll)
+                  SizedBox(
+                    width: 100,
+                    child: Text(
+                        _formatDynamicMetric(entry.impSecondaryValue),
+                        style: AppTextStyles.metricValue),
+                  ),
+                // Col 3
+                if (!isAll)
+                  SizedBox(
+                    width: 100,
+                    child: Text(
+                        _formatDynamicMetric(entry.impTertiaryValue),
+                        style: AppTextStyles.metricValue),
+                  ),
                 // Actions
                 SizedBox(
                   width: 100,
@@ -157,16 +189,24 @@ class _LeaderboardRowState extends State<LeaderboardRow> {
                         BlocConsumer<LeaderboardBloc, LeaderboardState>(
                           listener: (context, state) {
                             if (state is ModelDownloadSuccess) {
-                              AppSnackbar.showSuccess(context, 'Saved to ${state.filePath}');
+                              AppSnackbar.showSuccess(
+                                  context, 'Model saved to ${state.filePath}');
                               OpenFile.open(state.filePath);
                             }
                             if (state is ModelDownloadError) {
                               AppSnackbar.showError(context, state.message);
                             }
+                            if (state is ModelDeleteSuccess) {
+                              AppSnackbar.showSuccess(
+                                  context, 'Model deleted successfully');
+                            }
+                            if (state is ModelDeleteError) {
+                              AppSnackbar.showError(context, state.message);
+                            }
                           },
                           builder: (context, state) {
-                            final isDownloading =
-                                state is ModelDownloading && state.modelId == widget.entry.id;
+                            final isDownloading = state is ModelDownloading &&
+                                state.modelId == entry.id;
 
                             return isDownloading
                                 ? const SizedBox(
@@ -185,19 +225,22 @@ class _LeaderboardRowState extends State<LeaderboardRow> {
                                     ),
                                     tooltip: 'Download model',
                                     onPressed: _isHovered
-                                        ? () => context.read<LeaderboardBloc>().add(
-                                              DownloadModel(widget.entry.id, downloadName),
-                                            )
+                                        ? () => context
+                                            .read<LeaderboardBloc>()
+                                            .add(DownloadModel(
+                                                entry.id, downloadName))
                                         : null,
                                   );
                           },
                         ),
                         const SizedBox(width: 4),
                         IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.textSecondary),
+                          icon: const Icon(Icons.delete_outline,
+                              size: 20, color: AppColors.textSecondary),
                           tooltip: 'Delete model',
                           onPressed: _isHovered
-                              ? () => _showDeleteConfirmation(context, widget.entry.id, displayLabel)
+                              ? () => _showDeleteConfirmation(
+                                  context, entry.id, displayName)
                               : null,
                         ),
                       ],
@@ -211,12 +254,10 @@ class _LeaderboardRowState extends State<LeaderboardRow> {
           if (widget.isExpanded)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              child: ExpandedModelDetail(entry: widget.entry),
+              child: ExpandedModelDetail(entry: entry),
             ),
         ],
       ),
     );
   }
 }
-
-

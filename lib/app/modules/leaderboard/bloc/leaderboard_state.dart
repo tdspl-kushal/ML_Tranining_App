@@ -19,24 +19,29 @@ class LeaderboardLoading extends LeaderboardState {
 class LeaderboardLoaded extends LeaderboardState {
   final List<LeaderboardEntryModel> entries;
   final Set<String> expandedIds;
+  final String? activeFilter; // null = All, else use_case slug
 
   const LeaderboardLoaded({
     required this.entries,
     this.expandedIds = const {},
+    this.activeFilter,
   });
 
   LeaderboardLoaded copyWith({
     List<LeaderboardEntryModel>? entries,
     Set<String>? expandedIds,
+    String? activeFilter,
+    bool clearFilter = false,
   }) {
     return LeaderboardLoaded(
       entries: entries ?? this.entries,
       expandedIds: expandedIds ?? this.expandedIds,
+      activeFilter: clearFilter ? null : (activeFilter ?? this.activeFilter),
     );
   }
 
   @override
-  List<Object?> get props => [entries, expandedIds];
+  List<Object?> get props => [entries, expandedIds, activeFilter];
 }
 
 class LeaderboardError extends LeaderboardState {
@@ -53,7 +58,7 @@ class ModelDeleting extends LeaderboardState {}
 class ModelDeleteSuccess extends LeaderboardState {
   final String modelId;
   const ModelDeleteSuccess(this.modelId);
-  
+
   @override
   List<Object?> get props => [modelId];
 }
@@ -61,7 +66,7 @@ class ModelDeleteSuccess extends LeaderboardState {
 class ModelDeleteError extends LeaderboardState {
   final String message;
   const ModelDeleteError(this.message);
-  
+
   @override
   List<Object?> get props => [message];
 }
@@ -69,7 +74,7 @@ class ModelDeleteError extends LeaderboardState {
 class ModelDownloading extends LeaderboardState {
   final String modelId;
   const ModelDownloading(this.modelId);
-  
+
   @override
   List<Object?> get props => [modelId];
 }
@@ -77,7 +82,7 @@ class ModelDownloading extends LeaderboardState {
 class ModelDownloadSuccess extends LeaderboardState {
   final String filePath;
   const ModelDownloadSuccess(this.filePath);
-  
+
   @override
   List<Object?> get props => [filePath];
 }
@@ -85,7 +90,7 @@ class ModelDownloadSuccess extends LeaderboardState {
 class ModelDownloadError extends LeaderboardState {
   final String message;
   const ModelDownloadError(this.message);
-  
+
   @override
   List<Object?> get props => [message];
 }

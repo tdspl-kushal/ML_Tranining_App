@@ -8,21 +8,58 @@ class LeaderboardBloc extends Bloc<LeaderboardEvent, LeaderboardState> {
 
   LeaderboardBloc(this._repository) : super(const LeaderboardInitial()) {
     on<LoadLeaderboard>(_onLoadLeaderboard);
+    on<RefreshLeaderboard>(_onRefreshLeaderboard);
+    on<FilterByUseCase>(_onFilterByUseCase);
     on<ToggleModelExpansion>(_onToggleExpansion);
     on<DownloadModel>(_onDownloadModel);
     on<DeleteModel>(_onDeleteModel);
   }
 
-  Future<void> _onLoadLeaderboard(LoadLeaderboard event, Emitter<LeaderboardState> emit) async {
+  Future<void> _onLoadLeaderboard(
+      LoadLeaderboard event, Emitter<LeaderboardState> emit) async {
     emit(const LeaderboardLoading());
-    final result = await _repository.getLeaderboard(event.profileId);
+    final result = await _repository.fetchModels(useCase: event.useCase);
     result.fold(
       (failure) => emit(LeaderboardError(failure.message)),
-      (entries) => emit(LeaderboardLoaded(entries: entries)),
+      (entries) => emit(LeaderboardLoaded(
+        entries: entries,
+        activeFilter: event.useCase,
+      )),
     );
   }
 
-  void _onToggleExpansion(ToggleModelExpansion event, Emitter<LeaderboardState> emit) {
+  Future<void> _onRefreshLeaderboard(
+      RefreshLeaderboard event, Emitter<LeaderboardState> emit) async {
+    // Re-fetch with the currently active filter
+    final currentFilter =
+        state is LeaderboardLoaded ? (state as LeaderboardLoaded).activeFilter : null;
+    emit(const LeaderboardLoading());
+    final result = await _repository.fetchModels(useCase: currentFilter);
+    result.fold(
+      (failure) => emit(LeaderboardError(failure.message)),
+      (entries) => emit(LeaderboardLoaded(
+        entries: entries,
+        activeFilter: currentFilter,
+      )),
+    );
+  }
+
+  Future<void> _onFilterByUseCase(
+      FilterByUseCase event, Emitter<LeaderboardState> emit) async {
+    emit(const LeaderboardLoading());
+    final result = await _repository.fetchModels(useCase: event.useCase);
+    result.fold(
+      (failure) => emit(LeaderboardError(failure.message)),
+      (entries) => emit(LeaderboardLoaded(
+        entries: entries,
+        expandedIds: const {},
+        activeFilter: event.useCase,
+      )),
+    );
+  }
+
+  void _onToggleExpansion(
+      ToggleModelExpansion event, Emitter<LeaderboardState> emit) {
     final currentState = state;
     if (currentState is LeaderboardLoaded) {
       final expandedIds = Set<String>.from(currentState.expandedIds);
@@ -31,38 +68,39 @@ class LeaderboardBloc extends Bloc<LeaderboardEvent, LeaderboardState> {
       } else {
         expandedIds.add(event.modelId);
       }
-      emit(LeaderboardLoaded(
-        entries: currentState.entries,
-        expandedIds: expandedIds,
-      ));
+      emit(currentState.copyWith(expandedIds: expandedIds));
     }
   }
 
-  Future<void> _onDownloadModel(DownloadModel event, Emitter<LeaderboardState> emit) async {
+  Future<void> _onDownloadModel(
+      DownloadModel event, Emitter<LeaderboardState> emit) async {
     emit(ModelDownloading(event.modelId));
-    final result = await _repository.downloadModel(event.modelId, event.modelName);
+    final result =
+        await _repository.downloadModel(event.modelId, event.modelName);
     result.fold(
       (failure) => emit(ModelDownloadError(failure.message)),
       (filePath) => emit(ModelDownloadSuccess(filePath)),
     );
   }
 
-  Future<void> _onDeleteModel(DeleteModel event, Emitter<LeaderboardState> emit) async {
+  Future<void> _onDeleteModel(
+      DeleteModel event, Emitter<LeaderboardState> emit) async {
+    // Snapshot loaded state before emitting deleting
+    LeaderboardLoaded? snapshot;
+    if (state is LeaderboardLoaded) snapshot = state as LeaderboardLoaded;
+
     emit(ModelDeleting());
     final result = await _repository.deleteModel(event.modelId);
     result.fold(
       (failure) => emit(ModelDeleteError(failure.message)),
       (_) {
-        if (state is LeaderboardLoaded) {
-          final current = (state as LeaderboardLoaded);
-          final updated = current.entries
-              .where((e) => e.id != event.modelId)
-              .toList();
-          emit(current.copyWith(entries: updated));
-          emit(ModelDeleteSuccess(event.modelId));
+        if (snapshot != null) {
+          final updated =
+              snapshot.entries.where((e) => e.id != event.modelId).toList();
+          emit(snapshot.copyWith(entries: updated));
         }
+        emit(ModelDeleteSuccess(event.modelId));
       },
     );
   }
 }
-

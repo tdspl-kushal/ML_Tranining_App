@@ -15,6 +15,21 @@ extension IntExtensions on int {
   String toZeroPadded({int width = 2}) => toString().padLeft(width, '0');
 }
 
+extension UseCaseDisplay on String {
+  String toUseCaseLabel() {
+    switch (this) {
+      case 'failure_prediction':
+        return 'Failure Prediction';
+      case 'rul':
+        return 'RUL';
+      case 'anomaly_multivariate':
+        return 'Anomaly Multivariate';
+      default:
+        return split('_').map((w) => w.capitalize).join(' ');
+    }
+  }
+}
+
 extension ContextExtensions on BuildContext {
   double get screenWidth => MediaQuery.sizeOf(this).width;
   double get screenHeight => MediaQuery.sizeOf(this).height;

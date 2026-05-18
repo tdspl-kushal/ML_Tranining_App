@@ -10,13 +10,23 @@ class LeaderboardService {
     return _dio.get(ApiConstants.profileModels(profileId));
   }
 
+  /// Fetches all models with optional use_case filter.
+  Future<Response> fetchModels({String? useCase}) {
+    final queryParams = <String, dynamic>{
+      'limit': 50,
+      'offset': 0,
+      if (useCase != null) 'use_case': useCase,
+    };
+    return _dio.get('/v1/models', queryParameters: queryParams);
+  }
+
   Future<Response> fetchModelDetails(String modelId) {
     return _dio.get(ApiConstants.modelById(modelId));
   }
 
   Future<Response> downloadModel(String modelId) {
     return _dio.get(
-      ApiConstants.modelById(modelId) + '/download',
+      ApiConstants.modelDownload(modelId),
       options: Options(responseType: ResponseType.bytes),
     );
   }
@@ -24,5 +34,4 @@ class LeaderboardService {
   Future<Response> deleteModel(String modelId) {
     return _dio.delete(ApiConstants.modelById(modelId));
   }
-
 }

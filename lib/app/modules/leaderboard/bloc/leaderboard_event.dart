@@ -8,12 +8,23 @@ abstract class LeaderboardEvent extends Equatable {
 }
 
 class LoadLeaderboard extends LeaderboardEvent {
-  final String profileId;
-
-  const LoadLeaderboard(this.profileId);
+  final String? useCase; // null = All
+  const LoadLeaderboard({this.useCase});
 
   @override
-  List<Object?> get props => [profileId];
+  List<Object?> get props => [useCase];
+}
+
+class RefreshLeaderboard extends LeaderboardEvent {
+  const RefreshLeaderboard();
+}
+
+class FilterByUseCase extends LeaderboardEvent {
+  final String? useCase; // null = All, else slug string
+  const FilterByUseCase(this.useCase);
+
+  @override
+  List<Object?> get props => [useCase];
 }
 
 class ToggleModelExpansion extends LeaderboardEvent {
@@ -34,8 +45,6 @@ class DownloadModel extends LeaderboardEvent {
   @override
   List<Object?> get props => [modelId, modelName];
 }
-
-
 
 class DeleteModel extends LeaderboardEvent {
   final String modelId;

@@ -102,39 +102,24 @@ class _Step2FeaturesState extends State<Step2Features> {
                 onChanged: (_) => context.read<TrainingWizardBloc>().add(ToggleOptionalFeature(f)),
               )),
 
-            const SizedBox(height: 24),
-
             // ── Section 3: Cross-Tag Features ─────────────────────────────
-            _SectionHeader(
-              title: 'Cross-Tag Features',
-              subtitle: 'System-level features computed across all tags.',
-            ),
-            const SizedBox(height: 12),
-            if (featureData.crossTagAvailable.isEmpty)
-              Padding(
-                padding: const EdgeInsets.only(left: 4, bottom: 8),
-                child: Text(
-                  'No cross-tag features available.',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              )
-            else
-              ...featureData.crossTagAvailable.map((f) {
-                final presentInData = featureData.crossTagPresentInData.contains(f);
-                return _FeatureRow(
-                  feature: f,
-                  isSelected: state.selectedCrossTagFeatures.contains(f),
-                  isDisabled: false,
-                  trailingChip: presentInData
-                      ? _Chip(label: 'Present in data', color: Colors.green.shade400)
-                      : null,
-                  onChanged: (_) => context.read<TrainingWizardBloc>().add(ToggleCrossTagFeature(f)),
-                );
-              }),
+            // Only render if present_in_data is non-empty
+            if (featureData.crossTagPresentInData.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              _SectionHeader(
+                title: 'Cross-Tag Features',
+                subtitle: 'System-level features computed across all tags.',
+              ),
+              const SizedBox(height: 12),
+              ...featureData.crossTagPresentInData.map((f) => _FeatureRow(
+                    feature: f,
+                    isSelected: state.selectedCrossTagFeatures.contains(f),
+                    isDisabled: false,
+                    onChanged: (_) => context
+                        .read<TrainingWizardBloc>()
+                        .add(ToggleCrossTagFeature(f)),
+                  )),
+            ],
           ],
         );
       },

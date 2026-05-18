@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/asset_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -59,13 +61,10 @@ class ProfileDashboardScreen extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24),
       child: Row(
         children: [
-          Text(
-            AppStrings.appBarTitle,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
+          SvgPicture.asset(
+            AssetConstants.logoPath,
+            height: 28,
+            fit: BoxFit.contain,
           ),
           const Spacer(),
           IconButton(
@@ -205,83 +204,82 @@ class ProfileDashboardScreen extends StatelessWidget {
 
         if (state is DashboardLoaded) {
           final profiles = state.filteredProfiles;
-          return Container(
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
-              border: Border.all(color: AppColors.tableBorder),
-            ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minWidth: MediaQuery.of(context).size.width - 
-                    (context.isMobile ? 32 : (AppDimensions.sidebarWidth + 64)),
-                ),
-                child: IntrinsicWidth(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Table header
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                        decoration: const BoxDecoration(
-                          border: Border(bottom: BorderSide(color: AppColors.tableBorder)),
-                        ),
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: 50,
-                              child: Text(AppStrings.hash, style: AppTextStyles.tableHeader),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 4,
-                              child: Text(AppStrings.profileName, style: AppTextStyles.tableHeader),
-                            ),
-                            const SizedBox(width: 24),
-                            SizedBox(
-                              width: 120,
-                              child: Text(AppStrings.dataVolume, style: AppTextStyles.tableHeader),
-                            ),
-                            const SizedBox(width: 12),
-                            SizedBox(
-                              width: 80,
-                              child: Text(AppStrings.actions, style: AppTextStyles.tableHeader),
-                            ),
-                          ],
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: constraints.maxWidth,
+                  ),
+                  child: IntrinsicWidth(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Table header
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          top: BorderSide(color: AppColors.tableBorder),
+                          bottom: BorderSide(color: AppColors.tableBorder),
                         ),
                       ),
-                      // Table rows
-                      if (profiles.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.all(48),
-                          child: Center(
-                            child: Text(
-                              AppStrings.noProfilesFound,
-                              style: AppTextStyles.pageSubtitle,
-                            ),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 50,
+                            child: Text(AppStrings.hash, style: AppTextStyles.tableHeader),
                           ),
-                        )
-                      else
-                        ...profiles.asMap().entries.map((entry) {
-                          return ProfileListTile(
-                            index: entry.key,
-                            profile: entry.value,
-                            onTap: () {
-                              context.go(
-                                '/leaderboard?profileId=${entry.value.id}&profileName=${Uri.encodeComponent(entry.value.name)}',
-                              );
-                            },
-                            onEdit: () => _showEditDialog(context, entry.value),
-                            onDelete: () => _showDeleteDialog(context, entry.value),
-                          );
-                        }),
-                    ],
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 4,
+                            child: Text(AppStrings.profileName, style: AppTextStyles.tableHeader),
+                          ),
+                          const SizedBox(width: 24),
+                          SizedBox(
+                            width: 120,
+                            child: Text(AppStrings.dataVolume, style: AppTextStyles.tableHeader),
+                          ),
+                          const SizedBox(width: 12),
+                          SizedBox(
+                            width: 80,
+                            child: Text(AppStrings.actions, style: AppTextStyles.tableHeader),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Table rows
+                    if (profiles.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.all(48),
+                        child: Center(
+                          child: Text(
+                            AppStrings.noProfilesFound,
+                            style: AppTextStyles.pageSubtitle,
+                          ),
+                        ),
+                      )
+                    else
+                      ...profiles.asMap().entries.map((entry) {
+                        return ProfileListTile(
+                          index: entry.key,
+                          profile: entry.value,
+                          onTap: () {
+                            context.go(
+                              '/leaderboard?profileId=${entry.value.id}&profileName=${Uri.encodeComponent(entry.value.name)}',
+                            );
+                          },
+                          onEdit: () => _showEditDialog(context, entry.value),
+                          onDelete: () => _showDeleteDialog(context, entry.value),
+                        );
+                      }),
+                  ],
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           );
         }
 

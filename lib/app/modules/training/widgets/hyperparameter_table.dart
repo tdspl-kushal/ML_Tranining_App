@@ -1,4 +1,4 @@
-import 'dart:ui';
+//import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
@@ -25,7 +25,9 @@ class HyperparameterTable extends StatelessWidget {
       children: [
         Row(
           children: [
-            Expanded(child: Text('Hyperparameters', style: AppTextStyles.sectionTitle)),
+            Expanded(
+                child:
+                    Text('Hyperparameters', style: AppTextStyles.sectionTitle)),
             TextButton(
               onPressed: onSelectAll,
               child: Text(
@@ -49,15 +51,18 @@ class HyperparameterTable extends StatelessWidget {
             children: [
               // Header
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: AppColors.tableBorder)),
+                  border:
+                      Border(bottom: BorderSide(color: AppColors.tableBorder)),
                 ),
                 child: Row(
                   children: [
                     const SizedBox(width: 40),
                     Expanded(
-                      child: Text('Parameter', style: AppTextStyles.tableHeader),
+                      child:
+                          Text('Parameter', style: AppTextStyles.tableHeader),
                     ),
                     SizedBox(
                       width: 90,
@@ -76,10 +81,12 @@ class HyperparameterTable extends StatelessWidget {
                 final isSelected = selectedParameters.contains(name);
                 return Container(
                   decoration: const BoxDecoration(
-                    border: Border(bottom: BorderSide(color: AppColors.tableBorder)),
+                    border: Border(
+                        bottom: BorderSide(color: AppColors.tableBorder)),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     child: Row(
                       children: [
                         SizedBox(
@@ -97,7 +104,9 @@ class HyperparameterTable extends StatelessWidget {
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
                               color: AppColors.textPrimary,
-                              fontFeatures: [const FontFeature.tabularFigures()],
+                              fontFeatures: [
+                                const FontFeature.tabularFigures()
+                              ],
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),

@@ -2,5 +2,5 @@ class AssetConstants {
   AssetConstants._();
 
   // Placeholder for future SVG/image assets
-  static const String logoPath = 'assets/images/logo.png';
+  static const String logoPath = 'assets/images/anexee-logo.svg';
 }

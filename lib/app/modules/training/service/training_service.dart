@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import '../../../core/constants/api_constants.dart';
 
@@ -34,5 +37,22 @@ class TrainingService {
 
   Future<Response> trainModel(Map<String, dynamic> payload) {
     return _dio.post(ApiConstants.train, data: payload);
+  }
+
+  /// Returns a Stream of raw text lines from the SSE endpoint.
+  Future<Stream<String>> streamTraining(String modelId) async {
+    final response = await _dio.get(
+      ApiConstants.trainStream(modelId),
+      options: Options(
+        responseType: ResponseType.stream,
+        receiveTimeout: const Duration(minutes: 30),
+      ),
+    );
+    final responseBody = response.data as ResponseBody;
+    return responseBody.stream.transform(
+      StreamTransformer<Uint8List, String>.fromHandlers(
+        handleData: (data, sink) => sink.add(utf8.decode(data, allowMalformed: true)),
+      ),
+    );
   }
 }
