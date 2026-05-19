@@ -10,12 +10,12 @@ class LeaderboardService {
     return _dio.get(ApiConstants.profileModels(profileId));
   }
 
-  /// Fetches all models with optional use_case filter.
-  Future<Response> fetchModels({String? useCase}) {
+  /// Fetches models filtered by use_case.
+  Future<Response> fetchModels({required String useCase}) {
     final queryParams = <String, dynamic>{
       'limit': 50,
       'offset': 0,
-      if (useCase != null) 'use_case': useCase,
+      'use_case': useCase,
     };
     return _dio.get('/v1/models', queryParameters: queryParams);
   }

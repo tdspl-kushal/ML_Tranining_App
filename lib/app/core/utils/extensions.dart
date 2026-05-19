@@ -8,7 +8,11 @@ extension StringExtensions on String {
 }
 
 extension DoubleExtensions on double {
-  String toMetric() => NumberFormat('0.000').format(this);
+  String toMetric() {
+    if (isNaN) return 'NaN';
+    if (isInfinite) return 'Infinity';
+    return NumberFormat('0.000').format(this);
+  }
 }
 
 extension IntExtensions on int {

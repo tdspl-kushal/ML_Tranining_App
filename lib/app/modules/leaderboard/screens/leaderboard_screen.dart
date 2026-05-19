@@ -16,18 +16,18 @@ import '../bloc/leaderboard_bloc.dart';
 import '../bloc/leaderboard_event.dart';
 import '../bloc/leaderboard_state.dart';
 import '../widgets/leaderboard_table.dart';
+import '../../dashboard/widgets/user_profile_dialog.dart';
 
 // ── Filter options ────────────────────────────────────────────────────────────
 
 class _FilterOption {
   final String label;
-  final String? useCase; // null = All
+  final String useCase;
 
   const _FilterOption(this.label, this.useCase);
 }
 
 const _filterOptions = [
-  _FilterOption('All', null),
   _FilterOption('Failure Prediction', 'failure_prediction'),
   _FilterOption('RUL', 'rul'),
   _FilterOption('Anomaly Multivariate', 'anomaly_multivariate'),
@@ -54,8 +54,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   @override
   void initState() {
     super.initState();
-    // Load all models on init (no use-case filter)
-    context.read<LeaderboardBloc>().add(const LoadLeaderboard());
+    // Load initial filter state
+    context
+        .read<LeaderboardBloc>()
+        .add(const FilterByUseCase('failure_prediction'));
   }
 
   @override
@@ -69,8 +71,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         const Divider(height: 1),
         Expanded(
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(
-                isMobile ? 16.0 : AppDimensions.contentPadding),
+            padding:
+                EdgeInsets.all(isMobile ? 16.0 : AppDimensions.contentPadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -79,13 +81,34 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 _buildFilterRow(context),
                 const SizedBox(height: 16),
                 _buildTable(context),
-                const SizedBox(height: 40),
-                _buildFooter(context),
+                // const SizedBox(height: 40),
               ],
             ),
           ),
         ),
+        _buildFooter(context),
       ],
+    );
+  }
+
+  void _showProfileDropdown(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.01),
+      builder: (context) {
+        return Stack(
+          children: [
+            Positioned(
+              top: AppDimensions.topBarHeight + 8,
+              right: context.isMobile ? 16 : 24,
+              child: const Material(
+                color: Colors.transparent,
+                child: UserProfileDialog(),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -97,8 +120,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     return Container(
       height: AppDimensions.topBarHeight,
       color: AppColors.white,
-      padding:
-          EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24),
       child: Row(
         children: [
           SvgPicture.asset(
@@ -106,52 +128,21 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             height: 28,
             fit: BoxFit.contain,
           ),
-          const SizedBox(width: 24),
-          if (!isMobile)
-            Expanded(
-              child: SizedBox(
-                height: 36,
-                child: TextField(
-                  style: GoogleFonts.inter(fontSize: 13),
-                  decoration: InputDecoration(
-                    hintText: 'Search resources...',
-                    prefixIcon: const Icon(Icons.search,
-                        size: 18, color: AppColors.textTertiary),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 0),
-                    filled: true,
-                    fillColor: AppColors.scaffoldBg,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide.none,
-                    ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => _showProfileDropdown(context),
+            child: !isMobile
+                ? const CircleAvatar(
+                    radius: 16,
+                    backgroundColor: AppColors.primaryLight,
+                    child: Icon(Icons.person, size: 18, color: AppColors.primary),
+                  )
+                : const CircleAvatar(
+                    radius: 14,
+                    backgroundColor: AppColors.primaryLight,
+                    child: Icon(Icons.person, size: 16, color: AppColors.primary),
                   ),
-                ),
-              ),
-            ),
-          const SizedBox(width: 16),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_outlined,
-                color: AppColors.textSecondary),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
           ),
-          const SizedBox(width: 16),
-          if (!isMobile)
-            const CircleAvatar(
-              radius: 16,
-              backgroundColor: AppColors.primaryLight,
-              child:
-                  Icon(Icons.person, size: 18, color: AppColors.primary),
-            )
-          else
-            const CircleAvatar(
-              radius: 14,
-              backgroundColor: AppColors.primaryLight,
-              child:
-                  Icon(Icons.person, size: 16, color: AppColors.primary),
-            ),
         ],
       ),
     );
@@ -233,12 +224,16 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Radio<String?>(
+                  Radio<String>(
                     value: option.useCase,
                     groupValue: activeFilter,
-                    onChanged: (val) => context
-                        .read<LeaderboardBloc>()
-                        .add(FilterByUseCase(val)),
+                    onChanged: (val) {
+                      if (val != null) {
+                        context
+                            .read<LeaderboardBloc>()
+                            .add(FilterByUseCase(val));
+                      }
+                    },
                     activeColor: AppColors.primary,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     visualDensity: VisualDensity.compact,
@@ -248,9 +243,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     option.label,
                     style: GoogleFonts.inter(
                       fontSize: 13,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w400,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w400,
                       color: isSelected
                           ? AppColors.primary
                           : AppColors.textSecondary,
@@ -288,9 +282,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         if (state is LeaderboardError) {
           return AppErrorWidget(
             message: state.message,
-            onRetry: () => context
-                .read<LeaderboardBloc>()
-                .add(const LoadLeaderboard()),
+            onRetry: () =>
+                context.read<LeaderboardBloc>().add(const RefreshLeaderboard()),
           );
         }
 
@@ -319,53 +312,29 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         children: [
           const Divider(),
           const SizedBox(height: 16),
-          Text(
-            AppStrings.copyright,
-            style: GoogleFonts.inter(
-                fontSize: 12, color: AppColors.textTertiary),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
-            alignment: WrapAlignment.center,
-            children: [
-              _footerLink(AppStrings.privacyPolicy),
-              _footerLink(AppStrings.termsOfService),
-              _footerLink(AppStrings.documentation),
-            ],
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              AppStrings.copyright,
+              style: GoogleFonts.inter(
+                  fontSize: 12, color: AppColors.textTertiary),
+            ),
           ),
         ],
       );
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
           Text(
             AppStrings.copyright,
-            style: GoogleFonts.inter(
-                fontSize: 12, color: AppColors.textTertiary),
+            style:
+                GoogleFonts.inter(fontSize: 12, color: AppColors.textTertiary),
           ),
-          const Spacer(),
-          _footerLink(AppStrings.privacyPolicy),
-          const SizedBox(width: 24),
-          _footerLink(AppStrings.termsOfService),
-          const SizedBox(width: 24),
-          _footerLink(AppStrings.documentation),
         ],
-      ),
-    );
-  }
-
-  Widget _footerLink(String text) {
-    return Text(
-      text,
-      style: GoogleFonts.inter(
-        fontSize: 12,
-        color: AppColors.textSecondary,
-        fontWeight: FontWeight.w500,
       ),
     );
   }

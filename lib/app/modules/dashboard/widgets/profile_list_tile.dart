@@ -4,7 +4,6 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/extensions.dart';
 import '../../../data/model/profile_model.dart';
 import 'profile_icon_badge.dart';
-import 'tag_count_badge.dart';
 
 class ProfileListTile extends StatefulWidget {
   final int index;
@@ -80,7 +79,10 @@ class _ProfileListTileState extends State<ProfileListTile> {
               // Tag count
               SizedBox(
                 width: 120,
-                child: TagCountBadge(count: widget.profile.tagCount),
+                child: Text(
+                  widget.profile.modelCount.toString(),
+                  style: AppTextStyles.tableRow.copyWith(fontWeight: FontWeight.bold),
+                ),
               ),
               const SizedBox(width: 12),
               // Actions

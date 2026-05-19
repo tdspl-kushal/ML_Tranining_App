@@ -23,13 +23,15 @@ class AppStrings {
 
   // Dashboard
   static const String profileDashboard = 'Profile Dashboard';
-  static const String profileDashboardSubtitle = 'Manage and configure your active training profiles.';
+  static const String profileDashboardSubtitle =
+      'Manage and configure your active training profiles.';
   static const String searchProfiles = 'Search profiles...';
   static const String trainButton = 'Train';
 
   // Leaderboard
   static const String leaderboards = 'Leaderboards';
-  static const String leaderboardSubtitle = 'Compare model performance across primary metrics.';
+  static const String leaderboardSubtitle =
+      'Compare model performance across primary metrics.';
   static const String filter = 'Filter';
 
   // Training Wizard
@@ -40,7 +42,8 @@ class AppStrings {
   static const String useCase = 'Use Case';
   static const String configuration = 'Configuration';
   static const String generalSettings = 'General Settings';
-  static const String generalSettingsSubtitle = 'Define the foundational parameters for your model run.';
+  static const String generalSettingsSubtitle =
+      'Define the foundational parameters for your model run.';
   static const String hyperparameters = 'Hyperparameters';
   static const String selectAll = 'Select All';
   static const String modelName = 'Model Name';
@@ -58,7 +61,8 @@ class AppStrings {
 
   // Upload
   static const String uploadTrainingData = 'Upload Training Data';
-  static const String uploadSubtitle = 'Provide the initial dataset to extract features and infer schema.';
+  static const String uploadSubtitle =
+      'Provide the initial dataset to extract features and infer schema.';
 
   // Use Cases
   static const String textClassification = 'Text Classification';
@@ -87,8 +91,9 @@ class AppStrings {
   static const String noModelsFound = 'No models found';
 
   // Footer
-  static const String copyright = '© 2024 Anexee Analytical Excellence. All rights reserved.';
-  static const String privacyPolicy = 'Privacy Policy';
-  static const String termsOfService = 'Terms of Service';
-  static const String documentation = 'Documentation';
+  static const String copyright =
+      '© 2026 Anexee Analytical Excellence. All rights reserved.';
+  // static const String privacyPolicy = 'Privacy Policy';
+  // static const String termsOfService = 'Terms of Service';
+  // static const String documentation = 'Documentation';
 }

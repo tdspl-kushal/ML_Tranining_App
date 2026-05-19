@@ -6,15 +6,24 @@ import 'app/core/theme/app_theme.dart';
 import 'app/data/local/preference/app_preferences.dart';
 import 'app/data/local/db/app_database.dart';
 import 'app/di/service_locator.dart';
+import 'app/modules/auth/service/auth_manager.dart';
 import 'app/modules/dashboard/bloc/dashboard_bloc.dart';
 import 'app/modules/dashboard/bloc/dashboard_event.dart';
 import 'app/routes/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await configureDependencies();
   await AppPreferences.init();
+  await configureDependencies();
   await AppDatabase.init();
+
+  final token = AppPreferences.getString('auth_token');
+  if (token != null) {
+    final authManager = GetIt.instance<AuthManager>();
+    authManager.startTokenRefreshTimer();
+    authManager.fetchUserProfile();
+  }
+
   runApp(const AnexeeApp());
 }
 

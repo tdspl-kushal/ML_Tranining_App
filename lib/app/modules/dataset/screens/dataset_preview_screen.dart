@@ -149,12 +149,16 @@ class _DatasetPreviewScreenState extends State<DatasetPreviewScreen> {
         title: name,
         field: name,
         type: PlutoColumnType.text(),
-        // Give each column a reasonable minimum width.
         width: 160,
         minWidth: 80,
-        enableSorting: true,
-        enableFilterMenuItem: true,
-        enableContextMenu: true,
+        enableEditingMode: false,
+        enableSorting: false,
+        enableFilterMenuItem: false,
+        enableContextMenu: false,
+        enableColumnDrag: false,
+        enableDropToResize: false,
+        enableHideColumnMenuItem: false,
+        enableSetColumnsMenuItem: false,
       );
     }).toList();
   }
@@ -231,9 +235,10 @@ class _DatasetPreviewScreenState extends State<DatasetPreviewScreen> {
         rows: rows,
         onLoaded: (PlutoGridOnLoadedEvent event) {
           _gridStateManager = event.stateManager;
-          // Enable filtering toolbar immediately on load.
           _gridStateManager!.setShowColumnFilter(false);
+          _gridStateManager!.setSelectingMode(PlutoGridSelectingMode.none);
         },
+        mode: PlutoGridMode.normal,
         configuration: PlutoGridConfiguration(
           style: PlutoGridStyleConfig(
             enableGridBorderShadow: true,
@@ -416,8 +421,14 @@ class _DatasetPreviewGridState extends State<DatasetPreviewGrid> {
         type: PlutoColumnType.text(),
         width: 150,
         minWidth: 80,
-        enableSorting: true,
-        enableFilterMenuItem: true,
+        enableEditingMode: false,
+        enableSorting: false,
+        enableFilterMenuItem: false,
+        enableContextMenu: false,
+        enableColumnDrag: false,
+        enableDropToResize: false,
+        enableHideColumnMenuItem: false,
+        enableSetColumnsMenuItem: false,
       );
     }).toList();
   }
@@ -494,7 +505,9 @@ class _DatasetPreviewGridState extends State<DatasetPreviewGrid> {
       onLoaded: (event) {
         _gridStateManager = event.stateManager;
         _gridStateManager!.setShowColumnFilter(false);
+        _gridStateManager!.setSelectingMode(PlutoGridSelectingMode.none);
       },
+      mode: PlutoGridMode.normal,
       configuration: PlutoGridConfiguration(
         style: PlutoGridStyleConfig(
           enableGridBorderShadow: true,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:open_file/open_file.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -14,14 +13,14 @@ import 'expanded_model_detail.dart';
 
 class LeaderboardRow extends StatefulWidget {
   final LeaderboardEntryModel entry;
-  final String? activeFilter;
+  final String activeFilter;
   final bool isExpanded;
   final VoidCallback onToggle;
 
   const LeaderboardRow({
     super.key,
     required this.entry,
-    this.activeFilter,
+    required this.activeFilter,
     required this.isExpanded,
     required this.onToggle,
   });
@@ -72,7 +71,6 @@ class _LeaderboardRowState extends State<LeaderboardRow> {
     final entry = widget.entry;
     final displayName = entry.displayName;
     final downloadName = entry.modelName ?? 'model_v${entry.version}';
-    final bool isAll = widget.activeFilter == null;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -143,47 +141,38 @@ class _LeaderboardRowState extends State<LeaderboardRow> {
                   ),
                 ),
                 // Use case — use toUseCaseLabel()
-                if (isAll)
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      entry.useCase.toUseCaseLabel(),
-                      style: GoogleFonts.inter(
-                          fontSize: 14, color: AppColors.textSecondary),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
                 // Col 1
-                if (!isAll)
                   SizedBox(
-                    width: 100,
+                    width: 120,
                     child: Text(
                         _formatDynamicMetric(entry.impPrimaryValue),
-                        style: AppTextStyles.metricValue),
+                        style: AppTextStyles.metricValue,
+                        textAlign: TextAlign.center),
                   ),
                 // Col 2
-                if (!isAll)
                   SizedBox(
-                    width: 100,
+                    width: 120,
                     child: Text(
                         _formatDynamicMetric(entry.impSecondaryValue),
-                        style: AppTextStyles.metricValue),
+                        style: AppTextStyles.metricValue,
+                        textAlign: TextAlign.center),
                   ),
                 // Col 3
-                if (!isAll)
                   SizedBox(
-                    width: 100,
+                    width: 120,
                     child: Text(
                         _formatDynamicMetric(entry.impTertiaryValue),
-                        style: AppTextStyles.metricValue),
+                        style: AppTextStyles.metricValue,
+                        textAlign: TextAlign.center),
                   ),
                 // Actions
                 SizedBox(
-                  width: 100,
+                  width: 80,
                   child: AnimatedOpacity(
                     duration: const Duration(milliseconds: 150),
                     opacity: _isHovered ? 1.0 : 0.0,
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         BlocConsumer<LeaderboardBloc, LeaderboardState>(
@@ -223,6 +212,8 @@ class _LeaderboardRowState extends State<LeaderboardRow> {
                                       size: 20,
                                       color: AppColors.primary,
                                     ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
                                     tooltip: 'Download model',
                                     onPressed: _isHovered
                                         ? () => context
@@ -233,10 +224,12 @@ class _LeaderboardRowState extends State<LeaderboardRow> {
                                   );
                           },
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 8),
                         IconButton(
                           icon: const Icon(Icons.delete_outline,
                               size: 20, color: AppColors.textSecondary),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
                           tooltip: 'Delete model',
                           onPressed: _isHovered
                               ? () => _showDeleteConfirmation(

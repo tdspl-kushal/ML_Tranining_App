@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_dimensions.dart';
 import '../theme/app_text_styles.dart';
 import '../constants/app_strings.dart';
+import '../../data/local/preference/app_preferences.dart';
 
 class AppSidebar extends StatelessWidget {
   final String selectedRoute;
@@ -139,7 +140,12 @@ class AppSidebar extends StatelessWidget {
             icon: Icons.logout_rounded,
             label: AppStrings.signOut,
             isActive: false,
-            onTap: () {},
+            onTap: () async {
+              await AppPreferences.remove('auth_token');
+              if (context.mounted) {
+                onNavigate('/signin');
+              }
+            },
             isCollapsed: isCollapsed,
           ),
 

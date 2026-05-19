@@ -7,20 +7,14 @@ abstract class LeaderboardEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class LoadLeaderboard extends LeaderboardEvent {
-  final String? useCase; // null = All
-  const LoadLeaderboard({this.useCase});
 
-  @override
-  List<Object?> get props => [useCase];
-}
 
 class RefreshLeaderboard extends LeaderboardEvent {
   const RefreshLeaderboard();
 }
 
 class FilterByUseCase extends LeaderboardEvent {
-  final String? useCase; // null = All, else slug string
+  final String useCase; // slug string
   const FilterByUseCase(this.useCase);
 
   @override

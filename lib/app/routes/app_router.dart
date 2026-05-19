@@ -8,14 +8,38 @@ import '../core/utils/extensions.dart';
 import '../modules/dashboard/screens/profile_dashboard_screen.dart';
 import '../modules/leaderboard/bloc/leaderboard_bloc.dart';
 import '../modules/leaderboard/screens/leaderboard_screen.dart';
+import '../data/local/preference/app_preferences.dart';
+import '../modules/auth/bloc/sign_in_bloc.dart';
+import '../modules/auth/screens/sign_in_screen.dart';
 import 'route_names.dart';
 
 class AppRouter {
   AppRouter._();
 
   static final GoRouter router = GoRouter(
-    initialLocation: RouteNames.dashboard,
+    initialLocation: RouteNames.signIn,
+    redirect: (context, state) {
+      final token = AppPreferences.getString('auth_token');
+      final isLoggingIn = state.matchedLocation == RouteNames.signIn;
+
+      if (token == null && !isLoggingIn) {
+        return RouteNames.signIn;
+      }
+      if (token != null && isLoggingIn) {
+        return RouteNames.dashboard;
+      }
+      return null;
+    },
     routes: [
+      GoRoute(
+        path: RouteNames.signIn,
+        builder: (context, state) {
+          return BlocProvider(
+            create: (_) => GetIt.instance<SignInBloc>(),
+            child: const SignInScreen(),
+          );
+        },
+      ),
       ShellRoute(
         builder: (context, state, child) {
           return _ShellScaffold(

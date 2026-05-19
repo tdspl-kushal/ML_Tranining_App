@@ -4,14 +4,14 @@ class ProfileModel extends Equatable {
   final String id;
   final String name;
   final String iconType;
-  final int tagCount;
+  final int modelCount;
   final DateTime createdAt;
 
   const ProfileModel({
     required this.id,
     required this.name,
     required this.iconType,
-    required this.tagCount,
+    required this.modelCount,
     required this.createdAt,
   });
 
@@ -20,7 +20,7 @@ class ProfileModel extends Equatable {
       id: json['id']?.toString() ?? json['profile_id']?.toString() ?? '',
       name: json['name'] ?? json['profile_name'] ?? '',
       iconType: json['icon_type'] ?? 'default',
-      tagCount: json['tag_count'] ?? json['tags_detected']?.length ?? 0,
+      modelCount: json['model_count'] ?? json['models_count'] ?? json['total_models'] ?? 0,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : DateTime.now(),
@@ -32,7 +32,7 @@ class ProfileModel extends Equatable {
       'id': id,
       'name': name,
       'icon_type': iconType,
-      'tag_count': tagCount,
+      'model_count': modelCount,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -41,18 +41,18 @@ class ProfileModel extends Equatable {
     String? id,
     String? name,
     String? iconType,
-    int? tagCount,
+    int? modelCount,
     DateTime? createdAt,
   }) {
     return ProfileModel(
       id: id ?? this.id,
       name: name ?? this.name,
       iconType: iconType ?? this.iconType,
-      tagCount: tagCount ?? this.tagCount,
+      modelCount: modelCount ?? this.modelCount,
       createdAt: createdAt ?? this.createdAt,
     );
   }
 
   @override
-  List<Object?> get props => [id, name, iconType, tagCount, createdAt];
+  List<Object?> get props => [id, name, iconType, modelCount, createdAt];
 }

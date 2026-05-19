@@ -11,6 +11,10 @@ import '../modules/leaderboard/bloc/leaderboard_bloc.dart';
 import '../modules/training/service/training_service.dart';
 import '../modules/training/repository/training_repository.dart';
 import '../modules/training/bloc/training_wizard_bloc.dart';
+import '../modules/auth/service/auth_service.dart';
+import '../modules/auth/repository/auth_repository.dart';
+import '../modules/auth/bloc/sign_in_bloc.dart';
+import '../modules/auth/service/auth_manager.dart';
 
 final getIt = GetIt.instance;
 
@@ -28,14 +32,18 @@ Future<void> configureDependencies({FlavorConfig? config}) async {
   getIt.registerLazySingleton<ProfileService>(() => ProfileService(getIt<Dio>()));
   getIt.registerLazySingleton<LeaderboardService>(() => LeaderboardService(getIt<Dio>()));
   getIt.registerLazySingleton<TrainingService>(() => TrainingService(getIt<Dio>()));
+  getIt.registerLazySingleton<AuthService>(() => AuthService());
+  getIt.registerLazySingleton<AuthManager>(() => AuthManager(getIt<IAuthRepository>(), getIt<Dio>()));
 
   // 4. Repositories
   getIt.registerLazySingleton<IProfileRepository>(() => ProfileRepository(getIt<ProfileService>()));
   getIt.registerLazySingleton<ILeaderboardRepository>(() => LeaderboardRepository(getIt<LeaderboardService>()));
   getIt.registerLazySingleton<ITrainingRepository>(() => TrainingRepository(getIt<TrainingService>()));
+  getIt.registerLazySingleton<IAuthRepository>(() => AuthRepository(getIt<AuthService>()));
 
   // 5. BLoCs (factory — new instance per usage)
   getIt.registerFactory<DashboardBloc>(() => DashboardBloc(getIt<IProfileRepository>()));
   getIt.registerFactory<LeaderboardBloc>(() => LeaderboardBloc(getIt<ILeaderboardRepository>()));
   getIt.registerFactory<TrainingWizardBloc>(() => TrainingWizardBloc(getIt<ITrainingRepository>()));
+  getIt.registerFactory<SignInBloc>(() => SignInBloc(getIt<IAuthRepository>(), getIt<Dio>()));
 }

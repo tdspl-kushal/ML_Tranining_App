@@ -18,9 +18,31 @@ import '../bloc/dashboard_state.dart';
 import '../../../data/model/profile_model.dart';
 import '../widgets/profile_list_tile.dart';
 import '../../training/screens/training_wizard_screen.dart';
+import '../widgets/user_profile_dialog.dart';
 
 class ProfileDashboardScreen extends StatelessWidget {
   const ProfileDashboardScreen({super.key});
+
+  void _showProfileDropdown(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.01),
+      builder: (context) {
+        return Stack(
+          children: [
+            Positioned(
+              top: AppDimensions.topBarHeight + 8,
+              right: context.isMobile ? 16 : 24,
+              child: const Material(
+                color: Colors.transparent,
+                child: UserProfileDialog(),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,19 +57,20 @@ class ProfileDashboardScreen extends StatelessWidget {
         // Content
         Expanded(
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(isMobile ? 16.0 : AppDimensions.contentPadding),
+            padding:
+                EdgeInsets.all(isMobile ? 16.0 : AppDimensions.contentPadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(context),
                 const SizedBox(height: 24),
                 _buildProfileTable(context),
-                const SizedBox(height: 40),
-                _buildFooter(context),
+                // const SizedBox(height: 40),
               ],
             ),
           ),
         ),
+        _buildFooter(context),
       ],
     );
   }
@@ -67,30 +90,15 @@ class ProfileDashboardScreen extends StatelessWidget {
             fit: BoxFit.contain,
           ),
           const Spacer(),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-          const SizedBox(width: 16),
-          const CircleAvatar(
-            radius: 16,
-            backgroundColor: AppColors.primaryLight,
-            child: Icon(Icons.person, size: 18, color: AppColors.primary),
+          GestureDetector(
+            onTap: () => _showProfileDropdown(context),
+            child: const CircleAvatar(
+              radius: 16,
+              backgroundColor: AppColors.primaryLight,
+              child: Icon(Icons.person, size: 18, color: AppColors.primary),
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _topBarLink(String text) {
-    return Text(
-      text,
-      style: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textSecondary,
       ),
     );
   }
@@ -105,7 +113,8 @@ class ProfileDashboardScreen extends StatelessWidget {
         children: [
           Text(AppStrings.profileDashboard, style: AppTextStyles.pageTitle),
           const SizedBox(height: 4),
-          Text(AppStrings.profileDashboardSubtitle, style: AppTextStyles.pageSubtitle),
+          Text(AppStrings.profileDashboardSubtitle,
+              style: AppTextStyles.pageSubtitle),
           const SizedBox(height: 20),
           _buildSearchField(context, double.infinity),
           const SizedBox(height: 12),
@@ -128,7 +137,8 @@ class ProfileDashboardScreen extends StatelessWidget {
             children: [
               Text(AppStrings.profileDashboard, style: AppTextStyles.pageTitle),
               const SizedBox(height: 4),
-              Text(AppStrings.profileDashboardSubtitle, style: AppTextStyles.pageSubtitle),
+              Text(AppStrings.profileDashboardSubtitle,
+                  style: AppTextStyles.pageSubtitle),
             ],
           ),
         ),
@@ -155,8 +165,10 @@ class ProfileDashboardScreen extends StatelessWidget {
         style: GoogleFonts.inter(fontSize: 14),
         decoration: InputDecoration(
           hintText: AppStrings.searchProfiles,
-          prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.textTertiary),
-          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+          prefixIcon:
+              const Icon(Icons.search, size: 20, color: AppColors.textTertiary),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
           filled: true,
           fillColor: AppColors.white,
           border: OutlineInputBorder(
@@ -169,7 +181,8 @@ class ProfileDashboardScreen extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppDimensions.inputRadius),
-            borderSide: const BorderSide(color: AppColors.inputFocused, width: 1.5),
+            borderSide:
+                const BorderSide(color: AppColors.inputFocused, width: 1.5),
           ),
         ),
       ),
@@ -198,7 +211,8 @@ class ProfileDashboardScreen extends StatelessWidget {
         if (state is DashboardError) {
           return AppErrorWidget(
             message: state.message,
-            onRetry: () => context.read<DashboardBloc>().add(const LoadProfiles()),
+            onRetry: () =>
+                context.read<DashboardBloc>().add(const LoadProfiles()),
           );
         }
 
@@ -215,66 +229,73 @@ class ProfileDashboardScreen extends StatelessWidget {
                   child: IntrinsicWidth(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Table header
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: const BoxDecoration(
-                        border: Border(
-                          top: BorderSide(color: AppColors.tableBorder),
-                          bottom: BorderSide(color: AppColors.tableBorder),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 50,
-                            child: Text(AppStrings.hash, style: AppTextStyles.tableHeader),
+                      children: [
+                        // Table header
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              top: BorderSide(color: AppColors.tableBorder),
+                              bottom: BorderSide(color: AppColors.tableBorder),
+                            ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            flex: 4,
-                            child: Text(AppStrings.profileName, style: AppTextStyles.tableHeader),
-                          ),
-                          const SizedBox(width: 24),
-                          SizedBox(
-                            width: 120,
-                            child: Text(AppStrings.dataVolume, style: AppTextStyles.tableHeader),
-                          ),
-                          const SizedBox(width: 12),
-                          SizedBox(
-                            width: 80,
-                            child: Text(AppStrings.actions, style: AppTextStyles.tableHeader),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Table rows
-                    if (profiles.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.all(48),
-                        child: Center(
-                          child: Text(
-                            AppStrings.noProfilesFound,
-                            style: AppTextStyles.pageSubtitle,
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 50,
+                                child: Text(AppStrings.hash,
+                                    style: AppTextStyles.tableHeader),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                flex: 4,
+                                child: Text(AppStrings.profileName,
+                                    style: AppTextStyles.tableHeader),
+                              ),
+                              const SizedBox(width: 24),
+                              SizedBox(
+                                width: 120,
+                                child: Text('No. of Models',
+                                    style: AppTextStyles.tableHeader),
+                              ),
+                              const SizedBox(width: 12),
+                              SizedBox(
+                                width: 80,
+                                child: Text(AppStrings.actions,
+                                    style: AppTextStyles.tableHeader),
+                              ),
+                            ],
                           ),
                         ),
-                      )
-                    else
-                      ...profiles.asMap().entries.map((entry) {
-                        return ProfileListTile(
-                          index: entry.key,
-                          profile: entry.value,
-                          onTap: () {
-                            context.go(
-                              '/leaderboard?profileId=${entry.value.id}&profileName=${Uri.encodeComponent(entry.value.name)}',
+                        // Table rows
+                        if (profiles.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.all(48),
+                            child: Center(
+                              child: Text(
+                                AppStrings.noProfilesFound,
+                                style: AppTextStyles.pageSubtitle,
+                              ),
+                            ),
+                          )
+                        else
+                          ...profiles.asMap().entries.map((entry) {
+                            return ProfileListTile(
+                              index: entry.key,
+                              profile: entry.value,
+                              onTap: () {
+                                context.go(
+                                  '/leaderboard?profileId=${entry.value.id}&profileName=${Uri.encodeComponent(entry.value.name)}',
+                                );
+                              },
+                              onEdit: () =>
+                                  _showEditDialog(context, entry.value),
+                              onDelete: () =>
+                                  _showDeleteDialog(context, entry.value),
                             );
-                          },
-                          onEdit: () => _showEditDialog(context, entry.value),
-                          onDelete: () => _showDeleteDialog(context, entry.value),
-                        );
-                      }),
-                  ],
+                          }),
+                      ],
                     ),
                   ),
                 ),
@@ -296,76 +317,58 @@ class ProfileDashboardScreen extends StatelessWidget {
         children: [
           const Divider(),
           const SizedBox(height: 16),
-          Text(
-            AppStrings.copyright,
-            style: GoogleFonts.inter(fontSize: 12, color: AppColors.textTertiary),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _footerLink(AppStrings.privacyPolicy),
-              const SizedBox(width: 16),
-              _footerLink(AppStrings.termsOfService),
-              const SizedBox(width: 16),
-              _footerLink(AppStrings.documentation),
-            ],
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              AppStrings.copyright,
+              style: GoogleFonts.inter(
+                  fontSize: 12, color: AppColors.textTertiary),
+            ),
           ),
         ],
       );
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
           Text(
             AppStrings.copyright,
-            style: GoogleFonts.inter(fontSize: 12, color: AppColors.textTertiary),
+            style:
+                GoogleFonts.inter(fontSize: 12, color: AppColors.textTertiary),
           ),
-          const Spacer(),
-          _footerLink(AppStrings.privacyPolicy),
-          const SizedBox(width: 24),
-          _footerLink(AppStrings.termsOfService),
-          const SizedBox(width: 24),
-          _footerLink(AppStrings.documentation),
         ],
       ),
     );
   }
 
-  Widget _footerLink(String text) {
-    return Text(
-      text,
-      style: GoogleFonts.inter(
-        fontSize: 12,
-        color: AppColors.textSecondary,
-        fontWeight: FontWeight.w500,
-      ),
-    );
-  }
-
   void _showEditDialog(BuildContext context, ProfileModel profile) {
-    final TextEditingController controller = TextEditingController(text: profile.name);
+    final TextEditingController controller =
+        TextEditingController(text: profile.name);
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: AppColors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Text('Rename Profile', style: AppTextStyles.sectionTitle),
           content: TextField(
             controller: controller,
             style: GoogleFonts.inter(fontSize: 14),
             decoration: InputDecoration(
               hintText: 'Enter new profile name',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+              child: Text('Cancel',
+                  style: GoogleFonts.inter(color: AppColors.textSecondary)),
             ),
             ElevatedButton(
               onPressed: () {
@@ -396,16 +399,19 @@ class ProfileDashboardScreen extends StatelessWidget {
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: AppColors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Text('Delete Profile', style: AppTextStyles.sectionTitle),
           content: Text(
             'Are you sure you want to delete ${profile.name}?\n\nThis will permanently delete this profile and recursively delete all models within it.',
-            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+            style:
+                GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+              child: Text('Cancel',
+                  style: GoogleFonts.inter(color: AppColors.textSecondary)),
             ),
             ElevatedButton(
               onPressed: () {

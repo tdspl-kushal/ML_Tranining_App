@@ -37,12 +37,15 @@ class LeaderboardEntryModel extends Equatable {
   // Dynamic IMP Metrics Helpers
   String? get impPrimaryMetric => _getImpMetricName('primary');
   double? get impPrimaryValue => _getImpMetricValue('primary');
+  String? get impPrimaryDirection => _getImpMetricDirection('primary');
 
   String? get impSecondaryMetric => _getImpMetricName('secondary');
   double? get impSecondaryValue => _getImpMetricValue('secondary');
+  String? get impSecondaryDirection => _getImpMetricDirection('secondary');
 
   String? get impTertiaryMetric => _getImpMetricName('tertiary');
   double? get impTertiaryValue => _getImpMetricValue('tertiary');
+  String? get impTertiaryDirection => _getImpMetricDirection('tertiary');
 
   String? _getImpMetricName(String level) {
     if (metrics == null || metrics!['imp'] == null) return null;
@@ -63,6 +66,15 @@ class LeaderboardEntryModel extends Equatable {
     return null;
   }
 
+  String? _getImpMetricDirection(String level) {
+    if (metrics == null || metrics!['imp'] == null) return null;
+    final imp = metrics!['imp'];
+    if (imp is Map && imp[level] is Map) {
+      return imp[level]['direction']?.toString();
+    }
+    return null;
+  }
+
   factory LeaderboardEntryModel.fromJson(Map<String, dynamic> json) {
     // Metrics
     Map<String, dynamic>? metricsMap;
@@ -76,7 +88,7 @@ class LeaderboardEntryModel extends Equatable {
       fi = Map<String, double>.fromEntries(
         (json['feature_importance'] as Map).entries
             .where((e) => e.value is num)
-            .map((e) => MapEntry(e.key as String, (e.value as num).toDouble())),
+            .map((e) => MapEntry(e.key.toString(), (e.value as num).toDouble())),
       );
     }
 
@@ -92,9 +104,9 @@ class LeaderboardEntryModel extends Equatable {
     // Tags used
     List<String> tags = [];
     if (json['tags_used'] is List) {
-      tags = List<String>.from(json['tags_used'] as List);
+      tags = (json['tags_used'] as List).map((e) => e.toString()).toList();
     } else if (json['tags'] is List) {
-      tags = List<String>.from(json['tags'] as List);
+      tags = (json['tags'] as List).map((e) => e.toString()).toList();
     }
 
     return LeaderboardEntryModel(

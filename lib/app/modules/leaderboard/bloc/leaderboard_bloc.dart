@@ -7,7 +7,6 @@ class LeaderboardBloc extends Bloc<LeaderboardEvent, LeaderboardState> {
   final ILeaderboardRepository _repository;
 
   LeaderboardBloc(this._repository) : super(const LeaderboardInitial()) {
-    on<LoadLeaderboard>(_onLoadLeaderboard);
     on<RefreshLeaderboard>(_onRefreshLeaderboard);
     on<FilterByUseCase>(_onFilterByUseCase);
     on<ToggleModelExpansion>(_onToggleExpansion);
@@ -15,24 +14,13 @@ class LeaderboardBloc extends Bloc<LeaderboardEvent, LeaderboardState> {
     on<DeleteModel>(_onDeleteModel);
   }
 
-  Future<void> _onLoadLeaderboard(
-      LoadLeaderboard event, Emitter<LeaderboardState> emit) async {
-    emit(const LeaderboardLoading());
-    final result = await _repository.fetchModels(useCase: event.useCase);
-    result.fold(
-      (failure) => emit(LeaderboardError(failure.message)),
-      (entries) => emit(LeaderboardLoaded(
-        entries: entries,
-        activeFilter: event.useCase,
-      )),
-    );
-  }
+
 
   Future<void> _onRefreshLeaderboard(
       RefreshLeaderboard event, Emitter<LeaderboardState> emit) async {
-    // Re-fetch with the currently active filter
+    // Re-fetch with the currently active filter, fallback to default
     final currentFilter =
-        state is LeaderboardLoaded ? (state as LeaderboardLoaded).activeFilter : null;
+        state is LeaderboardLoaded ? (state as LeaderboardLoaded).activeFilter : 'failure_prediction';
     emit(const LeaderboardLoading());
     final result = await _repository.fetchModels(useCase: currentFilter);
     result.fold(

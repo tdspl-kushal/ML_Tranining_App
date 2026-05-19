@@ -19,24 +19,23 @@ class LeaderboardLoading extends LeaderboardState {
 class LeaderboardLoaded extends LeaderboardState {
   final List<LeaderboardEntryModel> entries;
   final Set<String> expandedIds;
-  final String? activeFilter; // null = All, else use_case slug
+  final String activeFilter; // use_case slug
 
   const LeaderboardLoaded({
     required this.entries,
     this.expandedIds = const {},
-    this.activeFilter,
+    required this.activeFilter,
   });
 
   LeaderboardLoaded copyWith({
     List<LeaderboardEntryModel>? entries,
     Set<String>? expandedIds,
     String? activeFilter,
-    bool clearFilter = false,
   }) {
     return LeaderboardLoaded(
       entries: entries ?? this.entries,
       expandedIds: expandedIds ?? this.expandedIds,
-      activeFilter: clearFilter ? null : (activeFilter ?? this.activeFilter),
+      activeFilter: activeFilter ?? this.activeFilter,
     );
   }
 

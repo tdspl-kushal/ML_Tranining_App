@@ -1,12 +1,14 @@
 import 'package:dio/dio.dart';
 import '../flavors/flavor_config.dart';
+import '../data/local/preference/app_preferences.dart';
 
 class DioClient {
   DioClient._();
 
   static Dio create(FlavorConfig config) {
+    final savedUrl = AppPreferences.getString('api_base_url');
     final dio = Dio(BaseOptions(
-      baseUrl: config.apiBaseUrl,
+      baseUrl: (savedUrl != null && savedUrl.isNotEmpty) ? savedUrl : config.apiBaseUrl,
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 60),
       headers: {
@@ -25,11 +27,10 @@ class DioClient {
 class AuthInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    // Token injection — in production, read from AppPreferences
-    // final token = AppPreferences.getString(PreferenceKeys.authToken);
-    // if (token != null) {
-    //   options.headers['Authorization'] = 'Bearer $token';
-    // }
+    final token = AppPreferences.getString('auth_token');
+    if (token != null) {
+      options.headers['Authorization'] = 'Bearer $token';
+    }
     handler.next(options);
   }
 }
@@ -39,6 +40,17 @@ class LoggingInterceptor extends Interceptor {
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     // ignore: avoid_print
     print('→ ${options.method} ${options.uri}');
+    if (options.data != null) {
+      var loggedData = options.data;
+      if (loggedData is Map) {
+        final redacted = Map<String, dynamic>.from(loggedData);
+        if (redacted.containsKey('password')) redacted['password'] = '***REDACTED***';
+        if (redacted.containsKey('EncryptedPassword')) redacted['EncryptedPassword'] = '***REDACTED***';
+        loggedData = redacted;
+      }
+      // ignore: avoid_print
+      print('Request Data: $loggedData');
+    }
     handler.next(options);
   }
 

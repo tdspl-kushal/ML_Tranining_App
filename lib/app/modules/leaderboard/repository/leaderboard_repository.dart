@@ -10,7 +10,7 @@ abstract class ILeaderboardRepository {
   Future<Either<Failure, List<LeaderboardEntryModel>>> getLeaderboard(
       String profileId);
   Future<Either<Failure, List<LeaderboardEntryModel>>> fetchModels(
-      {String? useCase});
+      {required String useCase});
   Future<Either<Failure, void>> deleteModel(String modelId);
   Future<Either<Failure, String>> downloadModel(String modelId, String modelName);
 }
@@ -25,7 +25,12 @@ class LeaderboardRepository implements ILeaderboardRepository {
         ? (data['items'] ?? data['data'] ?? [data])
         : (data is List ? data : []);
     return list
-        .map((e) => LeaderboardEntryModel.fromJson(e as Map<String, dynamic>))
+        .map((e) {
+          if (e is Map) {
+            return LeaderboardEntryModel.fromJson(Map<String, dynamic>.from(e));
+          }
+          return LeaderboardEntryModel.fromJson(const {});
+        })
         .toList();
   }
 
@@ -45,7 +50,7 @@ class LeaderboardRepository implements ILeaderboardRepository {
 
   @override
   Future<Either<Failure, List<LeaderboardEntryModel>>> fetchModels(
-      {String? useCase}) async {
+      {required String useCase}) async {
     try {
       final response = await _service.fetchModels(useCase: useCase);
       return Right(_parseItems(response.data));

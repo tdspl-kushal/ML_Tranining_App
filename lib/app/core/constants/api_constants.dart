@@ -2,9 +2,14 @@ class ApiConstants {
   ApiConstants._();
 
   static const String baseUrl = 'http://127.0.0.1:8000';
+  static const String mainUrl = 'http://164.52.221.177:5128';
+  static const String encryptionKey = 'BAKRNOCTECHONDATER';
 
   // Health
   static const String health = '/health';
+
+  // Auth
+  static const String signIn = '/api/SignIn';
 
   // Profiles
   static const String profiles = '/v1/profiles';
@@ -23,4 +28,7 @@ class ApiConstants {
   // Training
   static const String train = '/v1/train';
   static String trainStream(String modelId) => '/v1/train/$modelId/stream';
+
+  // User Profile
+  static const String getUserProfile = '/api/GetUserProfile';
 }
